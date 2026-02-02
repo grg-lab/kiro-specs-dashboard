@@ -26,13 +26,14 @@
   ],
   "keywords": [
     "kiro",
+    "ai",
     "specs",
+    "spec-driven-development",
     "dashboard",
     "tasks",
     "progress",
     "tracking",
-    "project-management",
-    "spec-driven-development"
+    "project-management"
   ],
   "activationEvents": [
     "onView:specs-dashboard.view",
