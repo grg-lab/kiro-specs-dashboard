@@ -67,6 +67,7 @@ export interface DashboardState {
 export type ExtensionMessage =
   | { type: 'specsLoaded'; specs: SpecFile[]; state: DashboardState }
   | { type: 'specUpdated'; spec: SpecFile }
+  | { type: 'notesUpdated'; specName: string; notes: Note[] }
   | { type: 'error'; message: string };
 
 /**

@@ -762,12 +762,12 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
       state.notes[specName].push(note);
       await this.stateManager.saveDashboardState(state);
       
-      // Send updated state to webview
+      // Send only notes update to webview (don't reset dashboard state)
       if (this.view) {
         this.view.webview.postMessage({
-          type: 'specsLoaded',
-          specs: this.specs,
-          state: state
+          type: 'notesUpdated',
+          specName: specName,
+          notes: state.notes[specName]
         });
       }
       
@@ -794,12 +794,12 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
         note.updatedAt = Date.now();
         await this.stateManager.saveDashboardState(state);
         
-        // Send updated state to webview
+        // Send only notes update to webview (don't reset dashboard state)
         if (this.view) {
           this.view.webview.postMessage({
-            type: 'specsLoaded',
-            specs: this.specs,
-            state: state
+            type: 'notesUpdated',
+            specName: specName,
+            notes: state.notes[specName]
           });
         }
         
@@ -836,12 +836,12 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
       state.notes[specName] = state.notes[specName].filter(n => n.id !== noteId);
       await this.stateManager.saveDashboardState(state);
       
-      // Send updated state to webview
+      // Send only notes update to webview (don't reset dashboard state)
       if (this.view) {
         this.view.webview.postMessage({
-          type: 'specsLoaded',
-          specs: this.specs,
-          state: state
+          type: 'notesUpdated',
+          specName: specName,
+          notes: state.notes[specName]
         });
       }
       

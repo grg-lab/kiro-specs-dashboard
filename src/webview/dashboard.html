@@ -941,6 +941,14 @@
                     hideLoading();
                     displaySpecs(allSpecs);
                     break;
+                case 'notesUpdated':
+                    // Update notes for a specific spec without resetting dashboard state
+                    if (message.specName && currentState.notes) {
+                        currentState.notes[message.specName] = message.notes;
+                        // Save the updated state
+                        saveState();
+                    }
+                    break;
                 case 'error':
                     hideLoading();
                     showError(message.message);
