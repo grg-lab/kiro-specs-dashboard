@@ -1,21 +1,21 @@
 {
-  "name": "specs-dashboard-extension",
+  "name": "kiro-specs-dashboard",
   "displayName": "Kiro Specs Dashboard",
   "description": "Extension for visualizing and tracking Kiro spec features and tasks.",
   "version": "0.1.0",
-  "publisher": "gramoscode",
+  "publisher": "grg-lab",
   "author": {
-    "name": "gramoscode"
+    "name": "grg-lab"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gramoscode/specs-dashboard-extension"
+    "url": "https://github.com/grg-lab/kiro-specs-dashboard"
   },
   "bugs": {
-    "url": "https://github.com/gramoscode/specs-dashboard-extension/issues"
+    "url": "https://github.com/grg-lab/kiro-specs-dashboard/issues"
   },
-  "homepage": "https://github.com/gramoscode/specs-dashboard-extension#readme",
+  "homepage": "https://github.com/grg-lab/kiro-specs-dashboard#readme",
   "icon": "media/icon.png",
   "engines": {
     "vscode": "^1.74.0"
