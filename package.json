@@ -1,0 +1,110 @@
+{
+  "name": "specs-dashboard-extension",
+  "displayName": "Kiro Specs Dashboard",
+  "description": "Extension for visualizing and tracking Kiro spec features and tasks.",
+  "version": "0.1.0",
+  "publisher": "gramoscode",
+  "author": {
+    "name": "gramoscode"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gramoscode/specs-dashboard-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/gramoscode/specs-dashboard-extension/issues"
+  },
+  "homepage": "https://github.com/gramoscode/specs-dashboard-extension#readme",
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "kiro",
+    "specs",
+    "dashboard",
+    "tasks",
+    "progress",
+    "tracking",
+    "project-management",
+    "spec-driven-development"
+  ],
+  "activationEvents": [
+    "onView:specs-dashboard.view",
+    "onCommand:specs-dashboard.show",
+    "workspaceContains:**/.kiro/specs/**/tasks.md"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "specs-dashboard.show",
+        "title": "Show Specs Dashboard",
+        "category": "Kiro"
+      },
+      {
+        "command": "specs-dashboard.refresh",
+        "title": "Refresh Specs Dashboard",
+        "category": "Kiro"
+      },
+      {
+        "command": "specs-dashboard.openFile",
+        "title": "Open Spec File",
+        "category": "Kiro"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "specs-dashboard-container",
+          "title": "Kiro Specs",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "specs-dashboard-container": [
+        {
+          "id": "specs-dashboard.view",
+          "name": "Dashboard",
+          "type": "webview"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "test:unit": "jest",
+    "test:property": "jest --testPathPattern=property",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^18.x",
+    "@types/vscode": "^1.74.0",
+    "@types/jest": "^29.5.0",
+    "@types/mocha": "^10.0.0",
+    "@types/glob": "^8.1.0",
+    "@vscode/test-electron": "^2.3.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "fast-check": "^3.15.0",
+    "mocha": "^10.2.0",
+    "glob": "^8.1.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "dependencies": {
+    "@vscode/codicons": "^0.0.35"
+  }
+}

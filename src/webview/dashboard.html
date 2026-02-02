@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'none'; 
+                   style-src {{cspSource}} 'unsafe-inline'; 
+                   script-src 'nonce-{{nonce}}'; 
+                   img-src {{cspSource}} data: https:; 
+                   font-src {{cspSource}};">
+    <link rel="stylesheet" href="{{highlightCssUri}}">
+    <link rel="stylesheet" href="{{codiconsUri}}">
+    <title>Specs Dashboard</title>
+    <style nonce="{{nonce}}">
+        /* Native IDE Styling - VSCode Design System */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--vscode-font-family);
+            font-size: 13px;
+            color: var(--vscode-foreground);
+            background: var(--vscode-sideBar-background);
+            line-height: 1.4;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            padding: 0;
+            width: 100%;
+        }
+
+        /* Statistics Header - Compact, Inline */
+        .stats-header {
+            background: var(--vscode-sideBarSectionHeader-background);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 11px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .stat-value {
+            font-family: var(--vscode-editor-font-family);
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        /* Filter Controls - Native Input Styling */
+        .filter-controls {
+            background: var(--vscode-sideBar-background);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding: 8px 12px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 4px 8px;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 13px;
+            outline: none;
+            margin-bottom: 8px;
+        }
+
+        .search-input:focus {
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .search-input::placeholder {
+            color: var(--vscode-input-placeholderForeground);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .filter-btn {
+            flex: 1;
+            padding: 4px 8px;
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: none;
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 11px;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .filter-btn:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        .filter-btn.active {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+
+        .filter-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .items-per-page {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .items-per-page select {
+            padding: 2px 4px;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 11px;
+            outline: none;
+        }
+
+        .items-per-page select:focus {
+            border-color: var(--vscode-focusBorder);
+        }
+
+        /* Spec List - Flat, List-Based Layout */
+        .spec-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .spec-item {
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding: 12px 12px 16px 12px;
+            cursor: pointer;
+        }
+        
+        .spec-item:nth-child(even) {
+            background: var(--vscode-sideBar-background);
+        }
+        
+        .spec-item:nth-child(odd) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .spec-item:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+
+        .spec-item:active {
+            background: var(--vscode-list-activeSelectionBackground);
+            color: var(--vscode-list-activeSelectionForeground);
+        }
+
+        .spec-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .spec-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .spec-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 2px;
+        }
+
+        .spec-path {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 6px;
+        }
+
+        .workspace-folder {
+            font-family: var(--vscode-editor-font-family);
+            font-size: 10px;
+            color: var(--vscode-descriptionForeground);
+            opacity: 0.8;
+            margin-right: 4px;
+        }
+
+        .spec-progress-bar {
+            height: 2px;
+            background: var(--vscode-editorWidget-background);
+            margin-bottom: 6px;
+            overflow: hidden;
+        }
+
+        .spec-progress-fill {
+            height: 100%;
+            background: var(--vscode-progressBar-background);
+            transition: width 0.2s;
+        }
+
+        .spec-stats {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            font-family: var(--vscode-editor-font-family);
+        }
+
+        .spec-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .spec-actions {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .action-btn {
+            padding: 2px 8px;
+            background: transparent;
+            color: var(--vscode-button-foreground);
+            border: 1px solid var(--vscode-button-border);
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 11px;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .action-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .action-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            padding: 32px 20px;
+            text-align: center;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .empty-state-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--vscode-foreground);
+        }
+
+        .empty-state-text {
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .empty-state-text code {
+            font-family: var(--vscode-editor-font-family);
+            font-size: 11px;
+            background: var(--vscode-textCodeBlock-background);
+            padding: 2px 4px;
+            color: var(--vscode-textPreformat-foreground);
+        }
+
+        .empty-state-text ol {
+            list-style-position: inside;
+            padding-left: 0;
+        }
+
+        .empty-state-text a {
+            color: var(--vscode-textLink-foreground);
+            text-decoration: none;
+        }
+
+        .empty-state-text a:hover {
+            color: var(--vscode-textLink-activeForeground);
+            text-decoration: underline;
+        }
+
+        /* Pagination - Minimal, Inline */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            padding: 12px;
+            border-top: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-sideBar-background);
+        }
+
+        .pagination-btn {
+            padding: 4px 8px;
+            min-width: 28px;
+            height: 24px;
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: none;
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 11px;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+
+        .pagination-info {
+            color: var(--vscode-descriptionForeground);
+            font-size: 11px;
+            margin: 0 8px;
+        }
+
+        /* Loading */
+        .loading {
+            padding: 20px;
+            text-align: center;
+            color: var(--vscode-descriptionForeground);
+            font-size: 12px;
+        }
+
+        /* Error */
+        .error-message {
+            background: var(--vscode-inputValidation-errorBackground);
+            color: var(--vscode-inputValidation-errorForeground);
+            border: 1px solid var(--vscode-inputValidation-errorBorder);
+            padding: 8px 12px;
+            font-size: 12px;
+            margin: 8px 12px;
+        }
+
+        /* Markdown Content Styling - IDE Integration (Requirements: 16.1, 16.5, 16.7) */
+        .markdown-content {
+            color: var(--vscode-foreground);
+            font-family: var(--vscode-font-family);
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 12px;
+        }
+
+        /* Markdown Headings - Compact, IDE-style */
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3,
+        .markdown-content h4,
+        .markdown-content h5,
+        .markdown-content h6 {
+            color: var(--vscode-foreground);
+            font-weight: 600;
+            margin: 16px 0 8px 0;
+            padding: 0;
+            line-height: 1.3;
+        }
+
+        .markdown-content h1 {
+            font-size: 18px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding-bottom: 8px;
+        }
+
+        .markdown-content h2 {
+            font-size: 16px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding-bottom: 6px;
+        }
+
+        .markdown-content h3 {
+            font-size: 14px;
+        }
+
+        .markdown-content h4,
+        .markdown-content h5,
+        .markdown-content h6 {
+            font-size: 13px;
+        }
+
+        /* Markdown Paragraphs - Compact spacing */
+        .markdown-content p {
+            margin: 8px 0;
+        }
+
+        /* Markdown Lists - Compact, IDE-style */
+        .markdown-content ul,
+        .markdown-content ol {
+            margin: 8px 0;
+            padding-left: 24px;
+        }
+
+        .markdown-content li {
+            margin: 4px 0;
+        }
+
+        /* Task Lists - GFM extension */
+        .markdown-content ul.task-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .markdown-content li.task-list-item {
+            margin: 4px 0;
+            padding-left: 24px;
+        }
+
+        .markdown-content li.task-list-item input[type="checkbox"] {
+            margin-right: 8px;
+            margin-left: -24px;
+        }
+
+        /* Markdown Code - Editor-style backgrounds (Requirements: 16.5, 16.7) */
+        .markdown-content code {
+            font-family: var(--vscode-editor-font-family);
+            font-size: 12px;
+            background: var(--vscode-textCodeBlock-background);
+            color: var(--vscode-textPreformat-foreground);
+            padding: 2px 4px;
+            border-radius: 0;
+        }
+
+        .markdown-content pre {
+            background: var(--vscode-textCodeBlock-background);
+            border: 1px solid var(--vscode-panel-border);
+            padding: 12px;
+            margin: 8px 0;
+            overflow-x: auto;
+            border-radius: 0;
+        }
+
+        .markdown-content pre code {
+            font-family: var(--vscode-editor-font-family);
+            font-size: 12px;
+            background: transparent;
+            padding: 0;
+            line-height: 1.5;
+        }
+
+        /* Markdown Tables - IDE-style (GFM extension) */
+        .markdown-content table.markdown-table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+
+        .markdown-content table.markdown-table th,
+        .markdown-content table.markdown-table td {
+            border: 1px solid var(--vscode-panel-border);
+            padding: 6px 8px;
+            text-align: left;
+        }
+
+        .markdown-content table.markdown-table th {
+            background: var(--vscode-sideBarSectionHeader-background);
+            font-weight: 600;
+        }
+
+        .markdown-content table.markdown-table tr:nth-child(even) {
+            background: var(--vscode-list-hoverBackground);
+        }
+
+        /* Markdown Blockquotes - Subtle, IDE-style */
+        .markdown-content blockquote {
+            border-left: 4px solid var(--vscode-panel-border);
+            padding-left: 12px;
+            margin: 8px 0;
+            color: var(--vscode-descriptionForeground);
+            font-style: italic;
+        }
+
+        /* Markdown Links - IDE-style */
+        .markdown-content a {
+            color: var(--vscode-textLink-foreground);
+            text-decoration: none;
+        }
+
+        .markdown-content a:hover {
+            color: var(--vscode-textLink-activeForeground);
+            text-decoration: underline;
+        }
+
+        /* Markdown Horizontal Rules - Subtle separator */
+        .markdown-content hr {
+            border: none;
+            border-top: 1px solid var(--vscode-panel-border);
+            margin: 16px 0;
+        }
+
+        /* Markdown Images - Constrained width */
+        .markdown-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 8px 0;
+        }
+
+        /* Strikethrough - GFM extension */
+        .markdown-content del {
+            text-decoration: line-through;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        /* Mermaid Diagrams - IDE-style */
+        .markdown-content .mermaid-diagram {
+            margin: 12px 0;
+            padding: 12px;
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-panel-border);
+            overflow-x: auto;
+        }
+
+        .markdown-content .mermaid-diagram svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Syntax Highlighting - Use VSCode editor theme colors */
+        .markdown-content .hljs {
+            background: var(--vscode-textCodeBlock-background);
+            color: var(--vscode-editor-foreground);
+        }
+
+        /* Remove website-style decorations */
+        .markdown-content * {
+            border-radius: 0 !important;  /* No rounded corners */
+            box-shadow: none !important;  /* No shadows */
+        }
+
+        /* Codicon styling */
+        .codicon {
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .filter-btn .codicon,
+        .action-btn .codicon,
+        .pagination-btn .codicon {
+            font-size: 12px;
+        }
+
+        /* Detail View - Native IDE Style (Requirements: 16.3, 16.4, 16.7, 16.8) */
+        .detail-view {
+            border-top: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-editor-background);
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-sideBarSectionHeader-background);
+        }
+
+        .detail-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .detail-nav-btn,
+        .detail-close-btn {
+            padding: 4px;
+            width: 24px;
+            height: 24px;
+            background: transparent;
+            color: var(--vscode-foreground);
+            border: none;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .detail-nav-btn:hover,
+        .detail-close-btn:hover {
+            background: var(--vscode-toolbar-hoverBackground);
+        }
+
+        .detail-nav-btn:focus,
+        .detail-close-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .detail-nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Detail Tabs - Flat, Minimal (Requirements: 16.3, 16.4) */
+        .detail-tabs {
+            display: flex;
+            background: var(--vscode-sideBar-background);
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+
+        .detail-tab {
+            padding: 8px 12px;
+            background: transparent;
+            color: var(--vscode-descriptionForeground);
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-family: var(--vscode-font-family);
+            font-size: 12px;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .detail-tab:hover {
+            background: var(--vscode-list-hoverBackground);
+            color: var(--vscode-foreground);
+        }
+
+        .detail-tab.active {
+            color: var(--vscode-foreground);
+            border-bottom-color: var(--vscode-focusBorder);
+        }
+
+        .detail-tab:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        /* Detail Content - Editor-style background */
+        .detail-content {
+            background: var(--vscode-editor-background);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .detail-tab-content {
+            display: none;
+            padding: 12px;
+        }
+
+        .detail-tab-content.active {
+            display: block;
+        }
+
+        .detail-tab-content .markdown-content {
+            padding: 0;
+        }
+
+        /* Empty detail content message */
+        .detail-empty {
+            padding: 20px;
+            text-align: center;
+            color: var(--vscode-descriptionForeground);
+            font-size: 12px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="errorContainer"></div>
+        <div id="loadingContainer"></div>
+
+        <div id="statsContainer" style="display: none;">
+            <!-- Statistics Header - Compact, Inline -->
+            <div class="stats-header">
+                <div class="stat-item">
+                    <span class="stat-value" id="totalSpecs">0</span>
+                    <span>specs</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="completedTasks">0</span>
+                    <span>done</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="pendingTasks">0</span>
+                    <span>todo</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="overallPercentage">0%</span>
+                    <span>total</span>
+                </div>
+            </div>
+
+            <!-- Filter Controls - Native Input Styling -->
+            <div class="filter-controls">
+                <input type="text" id="search" class="search-input" placeholder="Filter by name...">
+                
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">
+                        <span class="codicon codicon-list-unordered"></span> All
+                    </button>
+                    <button class="filter-btn" data-filter="in-progress">
+                        <span class="codicon codicon-sync"></span> Active
+                    </button>
+                    <button class="filter-btn" data-filter="completed">
+                        <span class="codicon codicon-check"></span> Done
+                    </button>
+                    <button class="filter-btn" data-filter="pending">
+                        <span class="codicon codicon-circle-outline"></span> Todo
+                    </button>
+                </div>
+                
+                <div class="items-per-page">
+                    <span>Items per page:</span>
+                    <select id="itemsPerPage">
+                        <option value="10" selected>10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Spec List - Flat, List-Based Layout -->
+            <ul class="spec-list" id="specList"></ul>
+            
+            <!-- Detail View - Inline Expansion (Native IDE Style) -->
+            <div id="detailView" class="detail-view" style="display: none;">
+                <div class="detail-header">
+                    <div class="detail-title" id="detailTitle"></div>
+                    <div class="detail-actions">
+                        <button class="detail-nav-btn" id="detailPrevBtn" title="Previous spec">
+                            <span class="codicon codicon-chevron-left"></span>
+                        </button>
+                        <button class="detail-nav-btn" id="detailNextBtn" title="Next spec">
+                            <span class="codicon codicon-chevron-right"></span>
+                        </button>
+                        <button class="detail-close-btn" id="detailCloseBtn" title="Close detail view">
+                            <span class="codicon codicon-close"></span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="detail-tabs">
+                    <button class="detail-tab active" data-tab="requirements">
+                        <span class="codicon codicon-file"></span> Requirements
+                    </button>
+                    <button class="detail-tab" data-tab="design">
+                        <span class="codicon codicon-edit"></span> Design
+                    </button>
+                    <button class="detail-tab" data-tab="tasks">
+                        <span class="codicon codicon-list-unordered"></span> Tasks
+                    </button>
+                </div>
+                
+                <div class="detail-content">
+                    <div class="detail-tab-content active" id="detailRequirements">
+                        <div class="markdown-content"></div>
+                    </div>
+                    <div class="detail-tab-content" id="detailDesign">
+                        <div class="markdown-content"></div>
+                    </div>
+                    <div class="detail-tab-content" id="detailTasks">
+                        <div class="markdown-content"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            <div id="paginationContainer"></div>
+        </div>
+    </div>
+
+    <script nonce="{{nonce}}">
+        // Global error handler for catching JavaScript errors (Requirement 11.3)
+        window.addEventListener('error', function(event) {
+            console.error('Webview error:', event.error);
+            
+            // Report error to extension
+            try {
+                vscode.postMessage({
+                    type: 'webviewError',
+                    error: {
+                        message: event.error?.message || event.message || 'Unknown error',
+                        stack: event.error?.stack || '',
+                        filename: event.filename || '',
+                        lineno: event.lineno || 0,
+                        colno: event.colno || 0
+                    }
+                });
+            } catch (e) {
+                console.error('Failed to report error to extension:', e);
+            }
+            
+            // Show fallback UI
+            showFallbackUI('An error occurred while rendering the dashboard. Please refresh.');
+            
+            // Prevent default error handling
+            event.preventDefault();
+        });
+        
+        // Global promise rejection handler
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled promise rejection:', event.reason);
+            
+            // Report error to extension
+            try {
+                vscode.postMessage({
+                    type: 'webviewError',
+                    error: {
+                        message: event.reason?.message || String(event.reason) || 'Promise rejection',
+                        stack: event.reason?.stack || ''
+                    }
+                });
+            } catch (e) {
+                console.error('Failed to report promise rejection to extension:', e);
+            }
+            
+            // Show fallback UI
+            showFallbackUI('An error occurred while processing data. Please refresh.');
+            
+            // Prevent default handling
+            event.preventDefault();
+        });
+        
+        // Show fallback UI when errors occur (Requirement 11.3)
+        function showFallbackUI(message) {
+            const container = document.querySelector('.container');
+            if (container) {
+                container.innerHTML = `
+                    <div style="padding: 20px; text-align: center;">
+                        <div style="color: var(--vscode-errorForeground); font-size: 16px; margin-bottom: 12px;">
+                            ⚠ Dashboard Error
+                        </div>
+                        <div style="color: var(--vscode-foreground); margin-bottom: 16px;">
+                            ${escapeHtml(message)}
+                        </div>
+                        <button id="reloadButton" style="
+                            padding: 6px 12px;
+                            background: var(--vscode-button-background);
+                            color: var(--vscode-button-foreground);
+                            border: none;
+                            cursor: pointer;
+                            font-family: var(--vscode-font-family);
+                            font-size: 13px;
+                        ">
+                            Refresh Dashboard
+                        </button>
+                    </div>
+                `;
+                
+                // Add event listener to the reload button
+                const reloadButton = document.getElementById('reloadButton');
+                if (reloadButton) {
+                    reloadButton.addEventListener('click', () => {
+                        location.reload();
+                    });
+                }
+            }
+        }
+        
+        // Acquire VS Code API
+        const vscode = acquireVsCodeApi();
+        
+        // Dashboard state
+        let currentState = {
+            filterMode: 'all',
+            searchQuery: '',
+            currentPage: 1,
+            itemsPerPage: 10,
+            sortBy: 'name',
+            sortOrder: 'asc'
+        };
+        
+        let allSpecs = [];
+        let filteredSpecs = [];
+        
+        // Request initial data
+        vscode.postMessage({ type: 'requestSpecs' });
+        
+        // Show loading state
+        showLoading('Loading specs...');
+        
+        // Handle messages from extension
+        window.addEventListener('message', event => {
+            const message = event.data;
+            
+            switch (message.type) {
+                case 'specsLoaded':
+                    allSpecs = message.specs;
+                    // Restore state from saved preferences
+                    if (message.state) {
+                        currentState = { ...currentState, ...message.state };
+                    }
+                    hideLoading();
+                    displaySpecs(allSpecs);
+                    break;
+                case 'error':
+                    hideLoading();
+                    showError(message.message);
+                    break;
+            }
+        });
+        
+        // Save state to extension
+        function saveState() {
+            vscode.postMessage({ 
+                type: 'saveState', 
+                state: currentState 
+            });
+        }
+        
+        // Display specs on the dashboard
+        function displaySpecs(specs) {
+            try {
+                const statsContainer = document.getElementById('statsContainer');
+                const specList = document.getElementById('specList');
+
+                filteredSpecs = specs;
+                currentState.currentPage = 1;
+
+                if (specs.length === 0) {
+                    specList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-title">No Specs Found</div>
+                            <div class="empty-state-text">
+                                <p>To get started with spec-driven development:</p>
+                                <ol style="text-align: left; display: inline-block; margin: 12px 0;">
+                                    <li style="margin: 8px 0;">Create a <code>.kiro/specs/</code> directory in your workspace</li>
+                                    <li style="margin: 8px 0;">Add a subdirectory for your feature (e.g., <code>user-authentication/</code>)</li>
+                                    <li style="margin: 8px 0;">Create a <code>tasks.md</code> file with your task list</li>
+                                    <li style="margin: 8px 0;">Optionally add <code>requirements.md</code> and <code>design.md</code></li>
+                                </ol>
+                                <p style="margin-top: 12px;">
+                                    <a href="https://github.com/kiro-ai/kiro" 
+                                       target="_blank" 
+                                       rel="noopener noreferrer"
+                                       style="color: var(--vscode-textLink-foreground); text-decoration: none;">
+                                        Learn more about Kiro specs →
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    statsContainer.style.display = 'block';
+                    return;
+                }
+
+                // Calculate overall stats
+                const overall = {
+                    totalSpecs: specs.length,
+                    totalTasks: 0,
+                    completedTasks: 0,
+                    pendingTasks: 0,
+                    optionalTasks: 0
+                };
+
+                specs.forEach(spec => {
+                    overall.totalTasks += spec.totalTasks;
+                    overall.completedTasks += spec.completedTasks;
+                    overall.pendingTasks += (spec.totalTasks - spec.completedTasks);
+                    overall.optionalTasks += spec.optionalTasks || 0;
+                });
+
+                overall.percentage = overall.totalTasks > 0 
+                    ? Math.round((overall.completedTasks / overall.totalTasks) * 100) 
+                    : 0;
+
+                // Update overall stats
+                document.getElementById('totalSpecs').textContent = overall.totalSpecs;
+                document.getElementById('completedTasks').textContent = overall.completedTasks;
+                document.getElementById('pendingTasks').textContent = overall.pendingTasks;
+                document.getElementById('overallPercentage').textContent = overall.percentage + '%';
+
+                statsContainer.style.display = 'block';
+
+                // Setup filters
+                setupFilters();
+
+                // Display first page
+                displayPage(1);
+            } catch (error) {
+                console.error('Error in displaySpecs:', error);
+                showError('Failed to display specs: ' + (error.message || String(error)));
+                
+                // Report error to extension
+                vscode.postMessage({
+                    type: 'webviewError',
+                    error: {
+                        message: 'displaySpecs failed: ' + (error.message || String(error)),
+                        stack: error.stack || ''
+                    }
+                });
+            }
+        }
+        
+        // Setup filter event listeners
+        function setupFilters() {
+            const searchInput = document.getElementById('search');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const itemsPerPageSelect = document.getElementById('itemsPerPage');
+            
+            // Restore filter values from state
+            searchInput.value = currentState.searchQuery;
+            itemsPerPageSelect.value = currentState.itemsPerPage;
+            
+            // Update active filter button
+            filterButtons.forEach(btn => {
+                if (btn.getAttribute('data-filter') === currentState.filterMode) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            searchInput.addEventListener('input', (e) => {
+                currentState.searchQuery = e.target.value;
+                currentState.currentPage = 1;
+                saveState();
+                applyFilters();
+            });
+            
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentState.filterMode = btn.getAttribute('data-filter');
+                    currentState.currentPage = 1;
+                    saveState();
+                    applyFilters();
+                });
+            });
+            
+            itemsPerPageSelect.addEventListener('change', (e) => {
+                currentState.itemsPerPage = e.target.value === 'all' ? 'all' : parseInt(e.target.value);
+                currentState.currentPage = 1;
+                saveState();
+                displayPage(1);
+            });
+        }
+        
+        // Apply filters to specs
+        function applyFilters() {
+            filteredSpecs = allSpecs.filter(spec => {
+                // Apply status filter
+                if (currentState.filterMode === 'in-progress' && (spec.progress === 0 || spec.progress === 100)) {
+                    return false;
+                }
+                if (currentState.filterMode === 'completed' && spec.progress !== 100) {
+                    return false;
+                }
+                if (currentState.filterMode === 'pending' && spec.progress !== 0) {
+                    return false;
+                }
+                
+                // Apply search query
+                if (currentState.searchQuery) {
+                    const query = currentState.searchQuery.toLowerCase();
+                    const displayName = formatDisplayName(spec.name).toLowerCase();
+                    return displayName.includes(query) || spec.name.toLowerCase().includes(query);
+                }
+                
+                return true;
+            });
+            
+            displayPage(1);
+        }
+        
+        // Display a specific page of specs
+        function displayPage(page) {
+            currentState.currentPage = page;
+            const specList = document.getElementById('specList');
+            const paginationContainer = document.getElementById('paginationContainer');
+            
+            let pageSpecs;
+            let listHTML = '';
+            
+            if (currentState.itemsPerPage === 'all') {
+                // Show all specs without pagination
+                pageSpecs = filteredSpecs;
+                listHTML = pageSpecs.map(spec => createSpecListItem(spec)).join('');
+                paginationContainer.innerHTML = '';
+            } else {
+                // Show paginated specs
+                const startIndex = (page - 1) * currentState.itemsPerPage;
+                const endIndex = startIndex + currentState.itemsPerPage;
+                pageSpecs = filteredSpecs.slice(startIndex, endIndex);
+                
+                listHTML = pageSpecs.map(spec => createSpecListItem(spec)).join('');
+                
+                // Add pagination controls
+                const totalPages = Math.ceil(filteredSpecs.length / currentState.itemsPerPage);
+                if (totalPages > 1) {
+                    paginationContainer.innerHTML = createPaginationControls(page, totalPages);
+                } else {
+                    paginationContainer.innerHTML = '';
+                }
+            }
+
+            specList.innerHTML = listHTML;
+            
+            // Add event listeners to file open buttons
+            attachFileOpenListeners();
+            
+            // Add event listeners to pagination buttons
+            attachPaginationListeners();
+        }
+        
+        // Create a spec list item HTML
+        function createSpecListItem(spec) {
+            const displayName = formatDisplayName(spec.name);
+            const progress = spec.progress || 0;
+            const totalTasks = spec.totalTasks || 0;
+            const completedTasks = spec.completedTasks || 0;
+            const pendingTasks = totalTasks - completedTasks;
+            const optionalTasks = spec.optionalTasks || 0;
+            
+            let statusBadge = '';
+            if (progress === 100) {
+                statusBadge = '<span class="spec-badge">DONE</span>';
+            } else if (progress > 0) {
+                statusBadge = '<span class="spec-badge">ACTIVE</span>';
+            } else {
+                statusBadge = '<span class="spec-badge">TODO</span>';
+            }
+
+            // Add workspace folder indicator for multi-root workspaces
+            const workspaceFolderIndicator = spec.workspaceFolder 
+                ? `<span class="workspace-folder">[${escapeHtml(spec.workspaceFolder)}]</span> ` 
+                : '';
+            
+            // Show relative path from workspace root
+            const relativePath = `.kiro/specs/${spec.name}`;
+
+            return `
+                <li class="spec-item">
+                    <div class="spec-item-header">
+                        <div class="spec-name">${escapeHtml(displayName)}</div>
+                        ${statusBadge}
+                    </div>
+                    <div class="spec-path">${workspaceFolderIndicator}${escapeHtml(relativePath)}</div>
+                    <div class="spec-progress-bar">
+                        <div class="spec-progress-fill" style="width: ${progress}%"></div>
+                    </div>
+                    <div class="spec-stats">
+                        <div class="spec-stat">
+                            <span>${progress}%</span>
+                        </div>
+                        <div class="spec-stat">
+                            <span>${completedTasks}/${totalTasks} tasks</span>
+                        </div>
+                        ${optionalTasks > 0 ? `<div class="spec-stat"><span>${optionalTasks} optional</span></div>` : ''}
+                    </div>
+                    <div class="spec-actions">
+                        <button class="action-btn" data-spec="${escapeHtml(spec.name)}" data-file="requirements.md" title="Open requirements.md">
+                            <span class="codicon codicon-file"></span> Requirements
+                        </button>
+                        <button class="action-btn" data-spec="${escapeHtml(spec.name)}" data-file="design.md" title="Open design.md">
+                            <span class="codicon codicon-edit"></span> Design
+                        </button>
+                        <button class="action-btn" data-spec="${escapeHtml(spec.name)}" data-file="tasks.md" title="Open tasks.md">
+                            <span class="codicon codicon-list-unordered"></span> Tasks
+                        </button>
+                        <button class="action-btn" data-spec="${escapeHtml(spec.name)}" data-action="notes" title="View notes">
+                            <span class="codicon codicon-note"></span> Notes
+                        </button>
+                    </div>
+                </li>
+            `;
+        }
+        
+        // Create a spec card HTML (legacy - kept for compatibility)
+        function createSpecCard(spec) {
+            return createSpecListItem(spec);
+        }
+        
+        // Create pagination controls HTML
+        function createPaginationControls(currentPage, totalPages) {
+            const startItem = (currentPage - 1) * currentState.itemsPerPage + 1;
+            const endItem = Math.min(currentPage * currentState.itemsPerPage, filteredSpecs.length);
+            
+            let paginationHTML = '<div class="pagination">';
+            
+            // Previous button
+            paginationHTML += `<button class="pagination-btn" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>
+                <span class="codicon codicon-chevron-left"></span> Prev
+            </button>`;
+            
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    paginationHTML += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    paginationHTML += '<span class="pagination-info">...</span>';
+                }
+            }
+            
+            // Next button
+            paginationHTML += `<button class="pagination-btn" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>
+                Next <span class="codicon codicon-chevron-right"></span>
+            </button>`;
+            
+            // Info
+            paginationHTML += `<span class="pagination-info">Showing ${startItem}-${endItem} of ${filteredSpecs.length}</span>`;
+            
+            paginationHTML += '</div>';
+            return paginationHTML;
+        }
+        
+        // Change to a specific page
+        function changePage(page) {
+            displayPage(page);
+            saveState();
+        }
+        
+        // View spec details (placeholder for task 12)
+        function viewSpecDetails(specName) {
+            vscode.postMessage({
+                type: 'viewDetails',
+                specName: specName
+            });
+        }
+        
+        // Open a specific spec file in the editor
+        function openSpecFile(specName, fileName) {
+            console.log('openSpecFile called:', specName, fileName);
+            console.log('All specs:', allSpecs);
+            
+            // Find the spec to get its path
+            const spec = allSpecs.find(s => s.name === specName);
+            console.log('Found spec:', spec);
+            
+            if (!spec) {
+                showError(`Spec not found: ${specName}`);
+                return;
+            }
+            
+            if (!spec.path) {
+                showError(`Spec path is missing for: ${specName}`);
+                console.error('Spec object:', JSON.stringify(spec, null, 2));
+                return;
+            }
+            
+            // Construct the full file path
+            const filePath = `${spec.path}/${fileName}`;
+            console.log('Opening file:', filePath);
+            console.log('File path components - spec.path:', spec.path, 'fileName:', fileName);
+            
+            // Send message to extension to open the file
+            vscode.postMessage({
+                type: 'openFile',
+                filePath: filePath
+            });
+        }
+        
+        // Attach event listeners to file open buttons
+        function attachFileOpenListeners() {
+            const buttons = document.querySelectorAll('.action-btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const specName = this.getAttribute('data-spec');
+                    const fileName = this.getAttribute('data-file');
+                    const action = this.getAttribute('data-action');
+                    
+                    if (action === 'notes') {
+                        // Open notes in main editor area via command
+                        vscode.postMessage({
+                            type: 'openNotes',
+                            specName: specName
+                        });
+                    } else if (specName && fileName) {
+                        openSpecFile(specName, fileName);
+                    }
+                });
+            });
+        }
+        
+        // Attach event listeners to pagination buttons
+        function attachPaginationListeners() {
+            const paginationButtons = document.querySelectorAll('.pagination-btn');
+            paginationButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    if (!this.disabled) {
+                        const page = parseInt(this.getAttribute('data-page'));
+                        if (page) {
+                            changePage(page);
+                        }
+                    }
+                });
+            });
+        }
+        
+        // Show detail view with specific tab
+        function showDetailView(specName, tabName = 'requirements') {
+            const spec = allSpecs.find(s => s.name === specName);
+            if (!spec) return;
+            
+            const detailView = document.getElementById('detailView');
+            const detailTitle = document.getElementById('detailTitle');
+            
+            detailTitle.textContent = formatDisplayName(specName);
+            detailView.style.display = 'block';
+            
+            // Switch to the specified tab
+            const tabs = document.querySelectorAll('.detail-tab');
+            const contents = document.querySelectorAll('.detail-tab-content');
+            
+            tabs.forEach(tab => {
+                if (tab.getAttribute('data-tab') === tabName) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            contents.forEach(content => {
+                if (content.id === `detail${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+        }
+        
+        // Format display name from kebab-case
+        function formatDisplayName(name) {
+            return name.split('-').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        }
+        
+        /**
+         * Escape HTML special characters to prevent XSS attacks
+         * This function converts special HTML characters to their entity equivalents
+         * 
+         * @param {string} text - Text to escape
+         * @returns {string} Escaped text safe for HTML insertion
+         * 
+         * Requirements: 10.5
+         */
+        function escapeHtml(text) {
+            if (text === null || text === undefined) {
+                return '';
+            }
+            
+            const div = document.createElement('div');
+            div.textContent = String(text);
+            return div.innerHTML;
+        }
+        
+        /**
+         * Sanitize HTML content by removing potentially dangerous elements and attributes
+         * This provides defense-in-depth for markdown-rendered content
+         * 
+         * Allowed elements: p, br, strong, em, code, pre, ul, ol, li, a, h1-h6, table, thead, tbody, tr, th, td, blockquote, hr, img, div, span
+         * Allowed attributes: href (for a), src/alt (for img), class, id
+         * 
+         * @param {string} html - HTML content to sanitize
+         * @returns {string} Sanitized HTML
+         * 
+         * Requirements: 10.5
+         */
+        function sanitizeHtml(html) {
+            if (!html || typeof html !== 'string') {
+                return '';
+            }
+            
+            // Create a temporary DOM element to parse HTML
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            
+            // Allowed tags and attributes
+            const allowedTags = new Set([
+                'p', 'br', 'strong', 'em', 'b', 'i', 'u', 'code', 'pre',
+                'ul', 'ol', 'li', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                'table', 'thead', 'tbody', 'tr', 'th', 'td', 'blockquote',
+                'hr', 'img', 'div', 'span', 'del', 'ins', 'sup', 'sub'
+            ]);
+            
+            const allowedAttributes = new Set([
+                'href', 'src', 'alt', 'title', 'class', 'id', 'width', 'height',
+                'type', 'disabled', 'checked', 'start'
+            ]);
+            
+            // Recursively sanitize elements
+            function sanitizeElement(element) {
+                // Remove script and style elements entirely
+                if (element.tagName && (element.tagName.toLowerCase() === 'script' || element.tagName.toLowerCase() === 'style')) {
+                    element.remove();
+                    return;
+                }
+                
+                // Check if tag is allowed
+                if (element.tagName && !allowedTags.has(element.tagName.toLowerCase())) {
+                    // Replace with text content
+                    const textNode = document.createTextNode(element.textContent || '');
+                    element.replaceWith(textNode);
+                    return;
+                }
+                
+                // Remove disallowed attributes
+                if (element.attributes) {
+                    const attributesToRemove = [];
+                    for (let i = 0; i < element.attributes.length; i++) {
+                        const attr = element.attributes[i];
+                        const attrName = attr.name.toLowerCase();
+                        
+                        // Remove event handlers (on*)
+                        if (attrName.startsWith('on')) {
+                            attributesToRemove.push(attr.name);
+                            continue;
+                        }
+                        
+                        // Remove disallowed attributes
+                        if (!allowedAttributes.has(attrName)) {
+                            attributesToRemove.push(attr.name);
+                            continue;
+                        }
+                        
+                        // Sanitize href and src to prevent javascript: protocol
+                        if (attrName === 'href' || attrName === 'src') {
+                            const value = attr.value.trim().toLowerCase();
+                            if (value.startsWith('javascript:') || value.startsWith('data:') || value.startsWith('vbscript:')) {
+                                attributesToRemove.push(attr.name);
+                            }
+                        }
+                    }
+                    
+                    // Remove flagged attributes
+                    attributesToRemove.forEach(attrName => {
+                        element.removeAttribute(attrName);
+                    });
+                }
+                
+                // Recursively sanitize children
+                const children = Array.from(element.childNodes);
+                children.forEach(child => {
+                    if (child.nodeType === Node.ELEMENT_NODE) {
+                        sanitizeElement(child);
+                    }
+                });
+            }
+            
+            // Sanitize all elements
+            const children = Array.from(temp.childNodes);
+            children.forEach(child => {
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    sanitizeElement(child);
+                }
+            });
+            
+            return temp.innerHTML;
+        }
+        
+        // Show error message
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            if (errorContainer) {
+                errorContainer.innerHTML = `
+                    <div class="error-message">⚠ ${escapeHtml(message)}</div>
+                `;
+            }
+        }
+        
+        // Clear error message
+        function clearError() {
+            const errorContainer = document.getElementById('errorContainer');
+            if (errorContainer) {
+                errorContainer.innerHTML = '';
+            }
+        }
+        
+        // Show loading indicator
+        function showLoading(message) {
+            clearError();
+            const loadingContainer = document.getElementById('loadingContainer');
+            if (loadingContainer) {
+                loadingContainer.innerHTML = `
+                    <div class="loading">${escapeHtml(message)}</div>
+                `;
+            }
+        }
+        
+        // Hide loading indicator
+        function hideLoading() {
+            const loadingContainer = document.getElementById('loadingContainer');
+            if (loadingContainer) {
+                loadingContainer.innerHTML = '';
+            }
+        }
+    </script>
+    
+    <!-- External Libraries for Markdown Rendering -->
+    <!-- These libraries are bundled locally for offline use and security -->
+    <script nonce="{{nonce}}" src="{{markedUri}}"></script>
+    <script nonce="{{nonce}}" src="{{highlightJsUri}}"></script>
+    <script nonce="{{nonce}}" src="{{mermaidUri}}"></script>
+    
+    <script nonce="{{nonce}}">
+        // Configure marked.js for GitHub Flavored Markdown (Requirement 7.4)
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({
+                gfm: true,              // Enable GitHub Flavored Markdown
+                breaks: true,           // Convert \n to <br> (GFM line breaks)
+                tables: true,           // Enable GFM tables
+                pedantic: false,        // Don't conform to obscure parts of markdown.pl
+                sanitize: false,        // Don't sanitize HTML (we trust spec content)
+                smartLists: true,       // Use smarter list behavior
+                smartypants: false      // Don't use smart typography
+            });
+            
+            // Custom renderer for task lists (GFM extension)
+            const renderer = new marked.Renderer();
+            
+            // Override list item rendering to support task lists
+            renderer.listitem = function(text, task, checked) {
+                if (task) {
+                    // Render task list item with checkbox
+                    const checkboxHtml = checked 
+                        ? '<input type="checkbox" disabled checked> ' 
+                        : '<input type="checkbox" disabled> ';
+                    return '<li class="task-list-item">' + checkboxHtml + text + '</li>\n';
+                }
+                return '<li>' + text + '</li>\n';
+            };
+            
+            // Override list rendering to add task-list class
+            const originalList = renderer.list;
+            renderer.list = function(body, ordered, start) {
+                const hasTaskItems = body.includes('class="task-list-item"');
+                const listTag = ordered ? 'ol' : 'ul';
+                const startAttr = (ordered && start !== 1) ? ' start="' + start + '"' : '';
+                const className = hasTaskItems ? ' class="task-list"' : '';
+                return '<' + listTag + startAttr + className + '>\n' + body + '</' + listTag + '>\n';
+            };
+            
+            // Override table rendering to add IDE-style classes
+            renderer.table = function(header, body) {
+                return '<table class="markdown-table">\n'
+                    + '<thead>\n'
+                    + header
+                    + '</thead>\n'
+                    + '<tbody>\n'
+                    + body
+                    + '</tbody>\n'
+                    + '</table>\n';
+            };
+            
+            // Override link rendering to handle autolinks
+            renderer.link = function(href, title, text) {
+                const titleAttr = title ? ' title="' + title + '"' : '';
+                return '<a href="' + href + '"' + titleAttr + ' target="_blank" rel="noopener noreferrer">' + text + '</a>';
+            };
+            
+            marked.use({ renderer });
+            
+            console.log('marked.js configured for GitHub Flavored Markdown');
+        } else {
+            console.error('marked.js library not loaded');
+        }
+        
+        /**
+         * Render markdown content to HTML
+         * @param {string} markdown - Raw markdown content
+         * @returns {string} Rendered HTML
+         */
+        function renderMarkdown(markdown) {
+            if (!markdown || typeof marked === 'undefined') {
+                return '';
+            }
+            
+            try {
+                return marked.parse(markdown);
+            } catch (error) {
+                console.error('Error rendering markdown:', error);
+                
+                // Report error to extension
+                vscode.postMessage({
+                    type: 'webviewError',
+                    error: {
+                        message: 'Markdown rendering failed: ' + (error.message || String(error)),
+                        stack: error.stack || ''
+                    }
+                });
+                
+                return '<div class="error-message">Failed to render markdown content. The content may contain invalid syntax.</div>';
+            }
+        }
+        
+        // Configure highlight.js for syntax highlighting (Requirement 7.5)
+        // Wait for hljs to be available
+        function configureHighlightJs() {
+            if (typeof hljs !== 'undefined') {
+                // Configure highlight.js with automatic language detection
+                hljs.configure({
+                    ignoreUnescapedHTML: true,  // Ignore unescaped HTML in code blocks
+                    languages: undefined,        // Use all available languages
+                    classPrefix: 'hljs-'        // CSS class prefix for syntax elements
+                });
+                
+                console.log('highlight.js configured for syntax highlighting');
+            } else {
+                console.warn('highlight.js library not loaded yet, will retry');
+                // Retry after a short delay
+                setTimeout(configureHighlightJs, 100);
+            }
+        }
+        
+        configureHighlightJs();
+        
+        /**
+         * Apply syntax highlighting to all code blocks in a container
+         * @param {HTMLElement} container - Container element with code blocks
+         */
+        function applySyntaxHighlighting(container) {
+            if (typeof hljs === 'undefined') {
+                console.warn('highlight.js not available, skipping syntax highlighting');
+                return;
+            }
+            
+            try {
+                // Find all code blocks
+                const codeBlocks = container.querySelectorAll('pre code');
+                
+                codeBlocks.forEach(block => {
+                    try {
+                        // Apply syntax highlighting with automatic language detection
+                        hljs.highlightElement(block);
+                    } catch (blockError) {
+                        console.error('Error highlighting code block:', blockError);
+                        // Continue with other blocks even if one fails
+                    }
+                });
+                
+                console.log(`Applied syntax highlighting to ${codeBlocks.length} code block(s)`);
+            } catch (error) {
+                console.error('Error applying syntax highlighting:', error);
+                
+                // Report error to extension
+                vscode.postMessage({
+                    type: 'webviewError',
+                    error: {
+                        message: 'Syntax highlighting failed: ' + (error.message || String(error)),
+                        stack: error.stack || ''
+                    }
+                });
+            }
+        }
+        
+        /**
+         * Render markdown with syntax highlighting and sanitization
+         * @param {string} markdown - Raw markdown content
+         * @returns {string} Rendered HTML with syntax highlighting and sanitization
+         * 
+         * Requirements: 7.4, 7.5, 10.5
+         */
+        function renderMarkdownWithHighlighting(markdown) {
+            if (!markdown) {
+                return '';
+            }
+            
+            // First render markdown to HTML
+            const html = renderMarkdown(markdown);
+            
+            // Sanitize the HTML to prevent XSS attacks (Requirement 10.5)
+            const sanitizedHtml = sanitizeHtml(html);
+            
+            // Create a temporary container to apply syntax highlighting
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = sanitizedHtml;
+            
+            // Apply syntax highlighting to code blocks
+            applySyntaxHighlighting(tempDiv);
+            
+            return tempDiv.innerHTML;
+        }
+        
+        // Configure mermaid.js for diagram rendering (Requirement 7.3)
+        function configureMermaid() {
+            if (typeof mermaid === 'undefined') {
+                console.warn('mermaid.js library not loaded yet, will retry');
+                setTimeout(configureMermaid, 100);
+                return;
+            }
+            
+            try {
+                // Get VSCode theme colors for mermaid diagrams
+                const isDarkTheme = document.body.classList.contains('vscode-dark') || 
+                                   document.body.classList.contains('vscode-high-contrast');
+                
+                // Get computed styles to resolve CSS variables
+                const computedStyle = getComputedStyle(document.body);
+                const backgroundColor = computedStyle.getPropertyValue('--vscode-editor-background').trim() || '#1e1e1e';
+                const foregroundColor = computedStyle.getPropertyValue('--vscode-foreground').trim() || '#d4d4d4';
+                const borderColor = computedStyle.getPropertyValue('--vscode-panel-border').trim() || '#454545';
+                
+                mermaid.initialize({
+                    startOnLoad: false,     // Don't auto-render on page load
+                    theme: isDarkTheme ? 'dark' : 'default',  // Match IDE theme
+                    securityLevel: 'loose', // Allow HTML in diagrams
+                    fontFamily: 'var(--vscode-font-family)',
+                    fontSize: 13,
+                    logLevel: 'error',      // Only log errors
+                    // Theme variables to match VSCode colors
+                    themeVariables: {
+                        primaryColor: borderColor,
+                        primaryTextColor: foregroundColor,
+                        primaryBorderColor: borderColor,
+                        lineColor: borderColor,
+                        secondaryColor: backgroundColor,
+                        tertiaryColor: backgroundColor,
+                        background: backgroundColor,
+                        mainBkg: backgroundColor,
+                        secondBkg: backgroundColor,
+                        mainContrastColor: foregroundColor,
+                        darkMode: isDarkTheme,
+                        fontFamily: 'var(--vscode-font-family)'
+                    }
+                });
+                
+                console.log('mermaid.js configured for diagram rendering');
+            } catch (error) {
+                console.error('Error configuring mermaid.js:', error);
+            }
+        }
+        
+        configureMermaid();
+        
+        /**
+         * Render mermaid diagrams in a container
+         * @param {HTMLElement} container - Container element with mermaid code blocks
+         */
+        async function renderMermaidDiagrams(container) {
+            if (typeof mermaid === 'undefined') {
+                console.warn('mermaid.js not available, skipping diagram rendering');
+                return;
+            }
+            
+            try {
+                // Find all code blocks with language 'mermaid'
+                const mermaidBlocks = container.querySelectorAll('pre code.language-mermaid, pre code.mermaid');
+                
+                if (mermaidBlocks.length === 0) {
+                    return;
+                }
+                
+                console.log(`Found ${mermaidBlocks.length} mermaid diagram(s) to render`);
+                
+                for (let i = 0; i < mermaidBlocks.length; i++) {
+                    const block = mermaidBlocks[i];
+                    const code = block.textContent;
+                    
+                    try {
+                        // Create a unique ID for this diagram
+                        const diagramId = 'mermaid-diagram-' + Date.now() + '-' + i;
+                        
+                        // Render the diagram
+                        const { svg } = await mermaid.render(diagramId, code);
+                        
+                        // Replace the code block with the rendered SVG
+                        const diagramDiv = document.createElement('div');
+                        diagramDiv.className = 'mermaid-diagram';
+                        diagramDiv.innerHTML = svg;
+                        
+                        // Replace the pre element (parent of code block)
+                        const preElement = block.parentElement;
+                        if (preElement && preElement.tagName === 'PRE') {
+                            preElement.replaceWith(diagramDiv);
+                        }
+                    } catch (error) {
+                        console.error('Error rendering mermaid diagram:', error);
+                        
+                        // Report error to extension
+                        vscode.postMessage({
+                            type: 'webviewError',
+                            error: {
+                                message: 'Mermaid diagram rendering failed: ' + (error.message || String(error)),
+                                stack: error.stack || ''
+                            }
+                        });
+                        
+                        // Show error message in place of diagram (Requirement 11.3)
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'error-message';
+                        errorDiv.textContent = 'Failed to render diagram. The diagram syntax may be invalid.';
+                        
+                        const preElement = block.parentElement;
+                        if (preElement && preElement.tagName === 'PRE') {
+                            preElement.replaceWith(errorDiv);
+                        }
+                    }
+                }
+                
+                console.log('Mermaid diagram rendering complete');
+            } catch (error) {
+                console.error('Error in renderMermaidDiagrams:', error);
+                
+                // Report error to extension
+                vscode.postMessage({
+                    type: 'webviewError',
+                    error: {
+                        message: 'renderMermaidDiagrams failed: ' + (error.message || String(error)),
+                        stack: error.stack || ''
+                    }
+                });
+            }
+        }
+        
+        /**
+         * Render markdown with syntax highlighting and mermaid diagrams
+         * @param {string} markdown - Raw markdown content
+         * @param {HTMLElement} targetElement - Target element to render into
+         */
+        async function renderMarkdownComplete(markdown, targetElement) {
+            if (!markdown || !targetElement) {
+                return;
+            }
+            
+            // First render markdown with syntax highlighting
+            const html = renderMarkdownWithHighlighting(markdown);
+            
+            // Set the HTML content
+            targetElement.innerHTML = html;
+            
+            // Then render mermaid diagrams
+            await renderMermaidDiagrams(targetElement);
+        }
+    </script>
+</body>
+</html>
