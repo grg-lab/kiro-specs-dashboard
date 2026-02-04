@@ -563,3 +563,215 @@ This implementation plan creates a native VSCode extension for spec visualizatio
 - All styling uses VSCode CSS variables exclusively for automatic theme adaptation
 - Component patterns follow VSCode design guidelines (flat, minimal, information-dense)
 - Task 22 focuses on implementing the native IDE look and feel throughout the dashboard
+
+
+- [ ] 24. Implement Analytics feature foundation
+  - [ ] 24.1 Create velocity data tracking infrastructure
+    - Create VelocityData interface and data structures
+    - Implement VelocityCalculator class with core calculation methods
+    - Add velocity data storage to StateManager
+    - Implement recordTaskCompletion() to track task events
+    - _Requirements: 19.1, 19.2_
+  
+  - [ ] 24.2 Integrate velocity tracking with task toggle
+    - Hook into toggleTask() to record completion events
+    - Extract task metadata (required vs optional, timestamp)
+    - Update weekly task counts and day-of-week aggregations
+    - Persist velocity data to workspace state
+    - _Requirements: 19.2, 19.6_
+  
+  - [ ] 24.3 Implement velocity metrics calculations
+    - Implement getTasksPerWeek() for historical data
+    - Implement calculateTrend() for week-over-week comparison
+    - Implement calculateRollingAverage() for 4-week average
+    - Implement calculateConsistencyScore() using standard deviation
+    - Implement calculateRequiredVsOptional() for task type split
+    - _Requirements: 21.1, 21.2, 21.3, 21.8, 21.9, 21.10_
+  
+  - [ ] 24.4 Implement spec completion tracking
+    - Track when specs reach 100% completion
+    - Calculate average time from first to last task
+    - Implement time distribution bucketing (fast/medium/slow)
+    - _Requirements: 21.4, 21.5, 21.6_
+  
+  - [ ] 24.5 Implement projection calculations
+    - Calculate projected completion date based on velocity
+    - Calculate remaining tasks and days remaining
+    - Handle edge cases (no velocity data, zero remaining tasks)
+    - _Requirements: 21.6, 21.10_
+
+- [ ] 25. Implement Analytics panel UI
+  - [ ] 25.1 Add Analytics button to dashboard
+    - Add button next to stats summary (specs, done, todo, total)
+    - Use Codicon graph icon with "Analytics" label
+    - Style button to match VSCode button styling
+    - Implement click handler to open analytics panel
+    - _Requirements: 18.1, 18.2_
+  
+  - [ ] 25.2 Create Analytics panel manager
+    - Create AnalyticsPanelManager class
+    - Implement openAnalytics() to create or reveal panel
+    - Create webview panel in main editor area (ViewColumn.One)
+    - Set retainContextWhenHidden to true
+    - Handle panel disposal and cleanup
+    - _Requirements: 18.2, 18.3, 18.4_
+  
+  - [ ] 25.3 Create Analytics panel HTML structure
+    - Create analytics.html template with tab navigation
+    - Implement tab structure: Velocity, Timeline, Forecasts, Overview
+    - Add tab switching logic with active state management
+    - Style tabs using VSCode CSS variables
+    - _Requirements: 18.3, 22.1, 22.2, 22.5_
+  
+  - [ ] 25.4 Implement Velocity tab layout
+    - Create hero stats section with 3 stat cards
+    - Add main chart container for tasks per week
+    - Create metrics grid for secondary metrics
+    - Add projection section with progress bar
+    - Use VSCode-native styling throughout
+    - _Requirements: 20.1-20.12, 22.6_
+  
+  - [ ] 25.5 Implement placeholder tabs
+    - Create Timeline tab with "Coming soon" message
+    - Create Forecasts tab with "Coming soon" message
+    - Create Overview tab with "Coming soon" message
+    - Style placeholders consistently with IDE theme
+    - _Requirements: 24.1, 24.2, 24.3_
+
+- [ ] 26. Implement Analytics charts and visualizations
+  - [ ] 26.1 Implement CSS-based bar chart for tasks per week
+    - Create bar chart container with flex layout
+    - Generate bars dynamically from weekly data
+    - Calculate bar heights as percentages of max value
+    - Add hover effects and tooltips
+    - Highlight current week with different color
+    - _Requirements: 20.1, 20.11, 20.12_
+  
+  - [ ] 26.2 Implement velocity trend indicator
+    - Display percentage change with up/down/stable icon
+    - Color-code: green for positive, red for negative, gray for stable
+    - Position next to current week stat
+    - _Requirements: 20.2, 20.12_
+  
+  - [ ] 26.3 Implement average velocity display with trend line
+    - Display large number for 4-week rolling average
+    - Add small line chart showing average over time
+    - Add dotted line to main chart showing average
+    - _Requirements: 20.3, 20.12_
+  
+  - [ ] 26.4 Implement specs completed bar chart
+    - Create smaller bar chart for specs per week
+    - Use similar styling to tasks chart
+    - Show last 8 weeks of data
+    - _Requirements: 20.5, 20.12_
+  
+  - [ ] 26.5 Implement day of week horizontal bars
+    - Create horizontal bar chart for 7 days
+    - Show task count for each day
+    - Use full-width bars with labels
+    - _Requirements: 20.8, 20.12_
+  
+  - [ ] 26.6 Implement required vs optional visualization
+    - Create stacked bar showing proportion
+    - Display percentages for each segment
+    - Color-code: blue for required, gray for optional
+    - _Requirements: 20.9, 20.12_
+  
+  - [ ] 26.7 Implement consistency score gauge
+    - Display score as percentage with rating (High/Medium/Low)
+    - Add visual gauge or meter representation
+    - Color-code based on rating
+    - _Requirements: 20.10, 20.12_
+  
+  - [ ] 26.8 Implement projection progress bar
+    - Display projected completion date
+    - Show progress bar with percentage complete
+    - Calculate and display days/weeks remaining
+    - _Requirements: 20.7, 20.12_
+
+- [ ] 27. Implement Analytics message protocol
+  - [ ] 27.1 Define Analytics message types
+    - Add AnalyticsMessage and AnalyticsCommand types to types.ts
+    - Define metricsUpdated, dataRefreshed messages
+    - Define refreshMetrics, switchTab, exportData commands
+    - _Requirements: 18.3, 22.9_
+  
+  - [ ] 27.2 Implement Extension Host → Analytics Webview messages
+    - Send metricsUpdated message with calculated metrics
+    - Send dataRefreshed message when velocity data changes
+    - Handle message sending in AnalyticsPanelManager
+    - _Requirements: 18.3, 22.9_
+  
+  - [ ] 27.3 Implement Analytics Webview → Extension Host messages
+    - Handle refreshMetrics command to recalculate on demand
+    - Handle switchTab command to track active tab
+    - Handle exportData command for future CSV/JSON export
+    - _Requirements: 22.9, 23.1_
+  
+  - [ ] 27.4 Implement analytics panel refresh logic
+    - Add refresh button to analytics panel
+    - Recalculate metrics on demand
+    - Update webview with new data
+    - _Requirements: 22.9_
+
+- [ ] 28. Implement Analytics state persistence
+  - [ ] 28.1 Persist velocity data in workspace state
+    - Save VelocityData to workspace state on changes
+    - Load VelocityData on extension activation
+    - Handle missing or corrupted data gracefully
+    - _Requirements: 19.6, 23.3, 23.5_
+  
+  - [ ] 28.2 Persist last active analytics tab
+    - Save active tab name to workspace state
+    - Restore active tab when reopening analytics panel
+    - Default to Velocity tab if no saved state
+    - _Requirements: 23.1, 23.2_
+  
+  - [ ] 28.3 Implement workspace-specific analytics data
+    - Maintain separate velocity data per workspace
+    - Load correct data when switching workspaces
+    - Clean up data when workspace is removed
+    - _Requirements: 23.4_
+
+- [ ] 29. Test and polish Analytics feature
+  - [ ] 29.1 Test velocity tracking accuracy
+    - Verify task completions are recorded correctly
+    - Test with various task types (required, optional)
+    - Test with multiple specs and workspaces
+    - Verify weekly aggregations are correct
+    - _Requirements: 19.1-19.6, 21.1-21.10_
+  
+  - [ ] 29.2 Test analytics calculations
+    - Verify all 10 metrics calculate correctly
+    - Test edge cases (no data, single data point, zero division)
+    - Test with various time ranges
+    - Verify consistency score algorithm
+    - _Requirements: 21.1-21.10_
+  
+  - [ ] 29.3 Test analytics UI and interactions
+    - Test tab switching and navigation
+    - Test chart rendering with various data sets
+    - Test responsive behavior in different editor widths
+    - Test theme compatibility (light/dark/high contrast)
+    - _Requirements: 20.1-20.12, 22.1-22.10_
+  
+  - [ ] 29.4 Test analytics state persistence
+    - Test velocity data persists across sessions
+    - Test active tab restoration
+    - Test workspace-specific data isolation
+    - Test corrupted data recovery
+    - _Requirements: 23.1-23.5_
+  
+  - [ ] 29.5 Polish analytics UI
+    - Refine chart styling and spacing
+    - Optimize for information density
+    - Ensure consistent VSCode styling
+    - Add keyboard navigation support
+    - Test accessibility
+    - _Requirements: 20.11, 20.12, 22.6, 22.7_
+
+- [ ] 30. Final Analytics checkpoint
+  - Ensure all Analytics tests pass
+  - Test complete Analytics workflow end-to-end
+  - Verify all Analytics requirements are met
+  - Ask the user if questions arise

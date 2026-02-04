@@ -234,3 +234,106 @@ The Specs Dashboard Extension is a native VSCode/Kiro IDE extension that provide
 8. WHEN a file is opened, THE Extension_Host SHALL focus the editor tab containing that file
 9. THE action buttons SHALL be positioned near the spec name or in the tab header for easy access
 10. THE action buttons SHALL include tooltips indicating which file will be opened
+
+
+### Requirement 18: Analytics Dashboard
+
+**User Story:** As a developer, I want to view velocity metrics and analytics about my spec progress, so that I can understand my productivity patterns and make data-driven decisions about my workflow.
+
+#### Acceptance Criteria
+
+1. WHEN viewing the main dashboard, THE Webview SHALL display an "Analytics" button next to the summary stats (specs, done, todo, total)
+2. WHEN a user clicks the "Analytics" button, THE Extension_Host SHALL open an Analytics panel in the main editor area
+3. THE Analytics panel SHALL use a webview with tabs for different analytics views: Velocity, Timeline, Forecasts, Overview
+4. THE Analytics panel SHALL persist when hidden and reuse the same panel instance if already open
+5. WHEN the Analytics panel opens, THE default active tab SHALL be "Velocity"
+
+### Requirement 19: Velocity Metrics Tracking
+
+**User Story:** As a developer, I want to track my task completion velocity over time, so that I can measure my productivity and identify trends.
+
+#### Acceptance Criteria
+
+1. THE Extension_Host SHALL track task completion events with timestamps in Workspace_State
+2. THE Extension_Host SHALL maintain a history of weekly task completion counts for at least 12 weeks
+3. WHEN a task is toggled to completed, THE Extension_Host SHALL record the completion timestamp
+4. WHEN a task is toggled to incomplete, THE Extension_Host SHALL remove or adjust the completion record
+5. THE Extension_Host SHALL calculate rolling averages, trends, and consistency scores from historical data
+6. THE Extension_Host SHALL persist velocity data across IDE sessions in Workspace_State
+
+### Requirement 20: Velocity Analytics Display
+
+**User Story:** As a developer, I want to see visual representations of my velocity metrics, so that I can quickly understand my productivity patterns.
+
+#### Acceptance Criteria
+
+1. THE Velocity tab SHALL display "Tasks Completed Per Week" as a bar chart showing the last 8-12 weeks
+2. THE Velocity tab SHALL display "Velocity Trend" as text with an icon (↑/↓/→) and percentage change
+3. THE Velocity tab SHALL display "Average Velocity (4-week rolling)" as a large number with a small trend line
+4. THE Velocity tab SHALL display "Current Week vs. Last Week" as a text comparison with percentage change
+5. THE Velocity tab SHALL display "Specs Completed Per Week" as a bar chart showing the last 8 weeks
+6. THE Velocity tab SHALL display "Average Time to Complete a Spec" as text with a distribution breakdown
+7. THE Velocity tab SHALL display "Projected Completion Date" as text with a progress bar
+8. THE Velocity tab SHALL display "Velocity by Day of Week" as horizontal bars showing task counts per day
+9. THE Velocity tab SHALL display "Required vs. Optional Task Velocity" as a stacked bar or text comparison
+10. THE Velocity tab SHALL display "Velocity Consistency Score" as text with a gauge or meter visualization
+11. ALL charts SHALL use CSS-based rendering or a lightweight charting library (Chart.js)
+12. ALL charts SHALL adapt to the IDE theme using CSS variables for colors
+
+### Requirement 21: Analytics Data Calculation
+
+**User Story:** As a developer, I want accurate analytics calculations based on my actual work patterns, so that the metrics reflect my true productivity.
+
+#### Acceptance Criteria
+
+1. THE Extension_Host SHALL calculate "Tasks Completed Per Week" by counting task completions within each 7-day period
+2. THE Extension_Host SHALL calculate "Velocity Trend" by comparing current week to previous week as a percentage
+3. THE Extension_Host SHALL calculate "Average Velocity" using a rolling 4-week window
+4. THE Extension_Host SHALL calculate "Specs Completed Per Week" by tracking when specs reach 100% completion
+5. THE Extension_Host SHALL calculate "Average Time to Complete a Spec" from first task to last task completion
+6. THE Extension_Host SHALL calculate "Projected Completion Date" using current velocity and remaining tasks
+7. THE Extension_Host SHALL calculate "Velocity by Day of Week" by aggregating task completions by day name
+8. THE Extension_Host SHALL calculate "Required vs. Optional Task Velocity" by separating tasks marked with asterisk
+9. THE Extension_Host SHALL calculate "Velocity Consistency Score" using standard deviation of weekly task counts
+10. ALL calculations SHALL handle edge cases (no data, single data point, division by zero) gracefully
+
+### Requirement 22: Analytics Panel UI and Navigation
+
+**User Story:** As a developer, I want an intuitive analytics interface with clear navigation, so that I can easily explore different metrics and insights.
+
+#### Acceptance Criteria
+
+1. THE Analytics panel SHALL display a tab bar with: Velocity, Timeline, Forecasts, Overview
+2. WHEN a user clicks a tab, THE panel SHALL switch to that tab's content
+3. THE active tab SHALL be visually highlighted
+4. THE panel SHALL include a close button to dismiss the analytics view
+5. THE panel SHALL be titled "Analytics - Kiro Specs Dashboard"
+6. THE panel SHALL use the same styling and theme as the main dashboard
+7. THE panel SHALL be responsive and adapt to different editor widths
+8. WHEN no data is available, THE panel SHALL display a helpful message explaining how to generate analytics
+9. THE panel SHALL include a refresh button to recalculate metrics on demand
+10. THE panel SHALL support keyboard navigation between tabs
+
+### Requirement 23: Analytics State Persistence
+
+**User Story:** As a developer, I want my analytics view preferences to persist, so that I don't lose my context when reopening the analytics panel.
+
+#### Acceptance Criteria
+
+1. THE Extension_Host SHALL persist the last active analytics tab in Workspace_State
+2. WHEN reopening the Analytics panel, THE Extension_Host SHALL restore the previously active tab
+3. THE Extension_Host SHALL persist velocity data and historical metrics in Workspace_State
+4. WHEN switching workspaces, THE Extension_Host SHALL load workspace-specific analytics data
+5. THE Extension_Host SHALL handle missing or corrupted analytics data by resetting to defaults
+
+### Requirement 24: Future Analytics Tabs (Placeholders)
+
+**User Story:** As a developer, I want the analytics system to be extensible for future metrics, so that new insights can be added without major refactoring.
+
+#### Acceptance Criteria
+
+1. THE Timeline tab SHALL display a placeholder message: "Timeline view coming soon"
+2. THE Forecasts tab SHALL display a placeholder message: "Forecasts view coming soon"
+3. THE Overview tab SHALL display a placeholder message: "Overview dashboard coming soon"
+4. THE tab structure SHALL be designed to easily accommodate new analytics views
+5. THE Extension_Host SHALL have a modular architecture for adding new analytics calculations

@@ -1027,3 +1027,546 @@ The dashboard must work seamlessly with all VSCode themes:
 - Match existing IDE panel aesthetics
 - Use subtle, functional styling
 - Follow VSCode design guidelines
+
+
+## Analytics Feature Design
+
+### Overview
+
+The Analytics feature provides velocity metrics and productivity insights through a dedicated panel that opens in the main editor area. The feature tracks task completion events over time and calculates various metrics to help developers understand their work patterns and productivity trends.
+
+### Architecture
+
+```mermaid
+graph TB
+    subgraph "Extension Host"
+        A[Analytics Button Click] --> B[Analytics Panel Manager]
+        B --> C[Velocity Calculator]
+        C --> D[Metrics Data Store]
+        D --> E[Workspace State]
+        B --> F[Analytics Webview]
+    end
+    
+    subgraph "Analytics Webview"
+        F --> G[Tab Navigation]
+        G --> H[Velocity Tab]
+        G --> I[Timeline Tab - Placeholder]
+        G --> J[Forecasts Tab - Placeholder]
+        G --> K[Overview Tab - Placeholder]
+        H --> L[Charts Renderer]
+        L --> M[CSS Charts / Chart.js]
+    end
+    
+    N[Task Toggle Event] --> C
+    C --> D
+    
+    style A fill:#e1f5ff
+    style F fill:#fff4e1
+```
+
+### Data Model
+
+#### Velocity Data Structure
+
+```typescript
+interface VelocityData {
+  // Weekly task completion history
+  weeklyTasks: WeeklyTaskData[];
+  
+  // Spec completion history
+  weeklySpecs: WeeklySpecData[];
+  
+  // Spec activity tracking
+  specActivity: Map<string, SpecActivityData>;
+  
+  // Day of week aggregation
+  dayOfWeekTasks: DayOfWeekData;
+}
+
+interface WeeklyTaskData {
+  weekStart: Date;        // Monday of the week
+  weekEnd: Date;          // Sunday of the week
+  completed: number;      // Tasks completed this week
+  required: number;       // Required tasks completed
+  optional: number;       // Optional tasks completed
+}
+
+interface WeeklySpecData {
+  weekStart: Date;
+  weekEnd: Date;
+  completed: number;      // Specs that reached 100%
+  started: number;        // Specs that had first task completed
+}
+
+interface SpecActivityData {
+  firstTaskDate: Date | null;    // When first task was completed
+  lastTaskDate: Date | null;     // When last task was completed
+  completionDate: Date | null;   // When spec reached 100%
+  totalTasks: number;
+  completedTasks: number;
+}
+
+interface DayOfWeekData {
+  monday: number;
+  tuesday: number;
+  wednesday: number;
+  thursday: number;
+  friday: number;
+  saturday: number;
+  sunday: number;
+}
+```
+
+#### Calculated Metrics
+
+```typescript
+interface VelocityMetrics {
+  // Core metrics
+  tasksPerWeek: number[];              // Last 12 weeks
+  currentWeekTasks: number;
+  lastWeekTasks: number;
+  velocityTrend: number;               // Percentage change
+  averageVelocity: number;             // 4-week rolling average
+  
+  // Spec metrics
+  specsPerWeek: number[];              // Last 8 weeks
+  averageTimeToComplete: number;       // Days
+  timeDistribution: {
+    fast: number;      // 0-10 days
+    medium: number;    // 11-20 days
+    slow: number;      // 21+ days
+  };
+  
+  // Projections
+  projectedCompletionDate: Date | null;
+  remainingTasks: number;
+  daysRemaining: number;
+  
+  // Patterns
+  dayOfWeekVelocity: DayOfWeekData;
+  requiredVsOptional: {
+    required: number;
+    optional: number;
+  };
+  
+  // Quality metrics
+  consistencyScore: number;            // 0-100
+  consistencyRating: 'High' | 'Medium' | 'Low';
+}
+```
+
+### Component Design
+
+#### Analytics Panel Manager
+
+```typescript
+class AnalyticsPanelManager {
+  private panel: vscode.WebviewPanel | undefined;
+  private velocityCalculator: VelocityCalculator;
+  
+  /**
+   * Open or reveal the analytics panel
+   */
+  public openAnalytics(): void {
+    if (this.panel) {
+      this.panel.reveal(vscode.ViewColumn.One);
+    } else {
+      this.createPanel();
+    }
+    this.updateContent();
+  }
+  
+  /**
+   * Create the analytics webview panel
+   */
+  private createPanel(): void {
+    this.panel = vscode.window.createWebviewPanel(
+      'specsAnalytics',
+      'Analytics - Kiro Specs Dashboard',
+      vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true
+      }
+    );
+    
+    this.panel.webview.html = this.getHtmlContent();
+    this.setupMessageHandling();
+    
+    this.panel.onDidDispose(() => {
+      this.panel = undefined;
+    });
+  }
+  
+  /**
+   * Update analytics content with latest metrics
+   */
+  private updateContent(): void {
+    const metrics = this.velocityCalculator.calculateMetrics();
+    this.panel?.webview.postMessage({
+      type: 'metricsUpdated',
+      metrics: metrics
+    });
+  }
+}
+```
+
+#### Velocity Calculator
+
+```typescript
+class VelocityCalculator {
+  private velocityData: VelocityData;
+  private stateManager: StateManager;
+  
+  /**
+   * Record a task completion event
+   */
+  public recordTaskCompletion(
+    specName: string,
+    taskId: string,
+    isRequired: boolean,
+    timestamp: Date = new Date()
+  ): void {
+    // Update weekly tasks
+    const week = this.getWeekStart(timestamp);
+    const weekData = this.getOrCreateWeekData(week);
+    weekData.completed++;
+    if (isRequired) {
+      weekData.required++;
+    } else {
+      weekData.optional++;
+    }
+    
+    // Update day of week
+    const dayName = this.getDayName(timestamp);
+    this.velocityData.dayOfWeekTasks[dayName]++;
+    
+    // Update spec activity
+    this.updateSpecActivity(specName, timestamp);
+    
+    // Persist to state
+    this.stateManager.saveVelocityData(this.velocityData);
+  }
+  
+  /**
+   * Calculate all velocity metrics
+   */
+  public calculateMetrics(): VelocityMetrics {
+    return {
+      tasksPerWeek: this.getTasksPerWeek(12),
+      currentWeekTasks: this.getCurrentWeekTasks(),
+      lastWeekTasks: this.getLastWeekTasks(),
+      velocityTrend: this.calculateTrend(),
+      averageVelocity: this.calculateRollingAverage(4),
+      specsPerWeek: this.getSpecsPerWeek(8),
+      averageTimeToComplete: this.calculateAvgTimeToComplete(),
+      timeDistribution: this.calculateTimeDistribution(),
+      projectedCompletionDate: this.projectCompletionDate(),
+      remainingTasks: this.getRemainingTasks(),
+      daysRemaining: this.calculateDaysRemaining(),
+      dayOfWeekVelocity: this.velocityData.dayOfWeekTasks,
+      requiredVsOptional: this.calculateRequiredVsOptional(),
+      consistencyScore: this.calculateConsistencyScore(),
+      consistencyRating: this.getConsistencyRating()
+    };
+  }
+  
+  /**
+   * Calculate velocity trend (current week vs last week)
+   */
+  private calculateTrend(): number {
+    const current = this.getCurrentWeekTasks();
+    const last = this.getLastWeekTasks();
+    if (last === 0) return 0;
+    return ((current - last) / last) * 100;
+  }
+  
+  /**
+   * Calculate rolling average velocity
+   */
+  private calculateRollingAverage(weeks: number): number {
+    const recentWeeks = this.velocityData.weeklyTasks.slice(-weeks);
+    const total = recentWeeks.reduce((sum, week) => sum + week.completed, 0);
+    return total / weeks;
+  }
+  
+  /**
+   * Calculate consistency score based on standard deviation
+   */
+  private calculateConsistencyScore(): number {
+    const tasks = this.getTasksPerWeek(8);
+    const mean = tasks.reduce((a, b) => a + b, 0) / tasks.length;
+    const variance = tasks.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / tasks.length;
+    const stdDev = Math.sqrt(variance);
+    
+    // Lower std dev = higher consistency
+    // Normalize to 0-100 scale
+    const maxStdDev = mean; // Assume max std dev equals mean
+    const score = Math.max(0, 100 - (stdDev / maxStdDev) * 100);
+    return Math.round(score);
+  }
+}
+```
+
+### UI Design
+
+#### Analytics Button in Dashboard
+
+```html
+<!-- Added to dashboard stats section -->
+<div class="stats-summary">
+  <span>1 specs</span>
+  <span>91 done</span>
+  <span>16 todo</span>
+  <span>85% total</span>
+  <button class="analytics-button" onclick="openAnalytics()">
+    <i class="codicon codicon-graph"></i>
+    Analytics
+  </button>
+</div>
+```
+
+```css
+.analytics-button {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 4px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.analytics-button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+```
+
+#### Analytics Panel Layout
+
+```html
+<div class="analytics-container">
+  <!-- Tab Navigation -->
+  <div class="analytics-tabs">
+    <button class="tab active" data-tab="velocity">⚡ Velocity</button>
+    <button class="tab" data-tab="timeline">📅 Timeline</button>
+    <button class="tab" data-tab="forecasts">🎯 Forecasts</button>
+    <button class="tab" data-tab="overview">📊 Overview</button>
+  </div>
+  
+  <!-- Velocity Tab Content -->
+  <div class="tab-content" id="velocity-tab">
+    <!-- Hero Stats -->
+    <div class="hero-stats">
+      <div class="stat-card">
+        <div class="stat-label">This Week</div>
+        <div class="stat-value">12 tasks</div>
+        <div class="stat-change positive">+50% ↑</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Average</div>
+        <div class="stat-value">9.5 tasks/week</div>
+        <div class="stat-sublabel">4-week rolling</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Consistency</div>
+        <div class="stat-value">85%</div>
+        <div class="stat-rating">High</div>
+      </div>
+    </div>
+    
+    <!-- Main Chart -->
+    <div class="chart-section">
+      <h3>Tasks Completed (Last 12 Weeks)</h3>
+      <div class="bar-chart" id="tasks-chart"></div>
+    </div>
+    
+    <!-- Secondary Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <h4>Specs Completed</h4>
+        <div class="mini-chart" id="specs-chart"></div>
+      </div>
+      <div class="metric-card">
+        <h4>Avg Time to Complete</h4>
+        <div class="metric-value">14 days</div>
+        <div class="distribution">
+          Fast: 3 | Medium: 5 | Slow: 2
+        </div>
+      </div>
+      <div class="metric-card">
+        <h4>Day of Week</h4>
+        <div class="horizontal-bars" id="day-chart"></div>
+      </div>
+      <div class="metric-card">
+        <h4>Required vs Optional</h4>
+        <div class="stacked-bar">
+          <div class="bar-segment required" style="width: 70%">70%</div>
+          <div class="bar-segment optional" style="width: 30%">30%</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Projection -->
+    <div class="projection-section">
+      <h3>🔮 Projected Completion</h3>
+      <div class="projection-content">
+        <div class="projection-date">March 15, 2026 (6 weeks remaining)</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 65%"></div>
+        </div>
+        <div class="projection-details">65% complete</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Placeholder Tabs -->
+  <div class="tab-content hidden" id="timeline-tab">
+    <div class="placeholder">
+      <h2>Timeline View</h2>
+      <p>Coming soon: Historical view of spec progress over time</p>
+    </div>
+  </div>
+  
+  <div class="tab-content hidden" id="forecasts-tab">
+    <div class="placeholder">
+      <h2>Forecasts</h2>
+      <p>Coming soon: Predictive analytics and completion forecasts</p>
+    </div>
+  </div>
+  
+  <div class="tab-content hidden" id="overview-tab">
+    <div class="placeholder">
+      <h2>Overview Dashboard</h2>
+      <p>Coming soon: High-level summary of all metrics</p>
+    </div>
+  </div>
+</div>
+```
+
+### Chart Rendering
+
+#### CSS-Based Bar Chart
+
+```css
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  height: 150px;
+  gap: 8px;
+  padding: 20px 10px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+}
+
+.bar {
+  flex: 1;
+  background: var(--vscode-charts-blue);
+  border-radius: 2px 2px 0 0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.bar.current {
+  background: var(--vscode-charts-green);
+}
+
+.bar:hover {
+  opacity: 0.8;
+}
+
+.bar::after {
+  content: attr(data-value);
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--vscode-foreground);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.bar:hover::after {
+  opacity: 1;
+}
+```
+
+#### JavaScript Chart Generation
+
+```javascript
+function renderTasksChart(weeklyData) {
+  const chartContainer = document.getElementById('tasks-chart');
+  chartContainer.innerHTML = '';
+  
+  const maxTasks = Math.max(...weeklyData.map(w => w.completed));
+  
+  weeklyData.forEach((week, index) => {
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    if (index === weeklyData.length - 1) {
+      bar.classList.add('current');
+    }
+    
+    const height = (week.completed / maxTasks) * 100;
+    bar.style.height = `${height}%`;
+    bar.setAttribute('data-value', week.completed);
+    bar.setAttribute('title', `Week ${index + 1}: ${week.completed} tasks`);
+    
+    chartContainer.appendChild(bar);
+  });
+}
+```
+
+### State Persistence
+
+```typescript
+interface AnalyticsState {
+  velocityData: VelocityData;
+  lastActiveTab: string;
+  lastCalculated: Date;
+}
+
+// Save to workspace state
+await context.workspaceState.update('analyticsState', analyticsState);
+
+// Load from workspace state
+const analyticsState = context.workspaceState.get<AnalyticsState>('analyticsState');
+```
+
+### Message Protocol
+
+```typescript
+// Extension Host → Analytics Webview
+type AnalyticsMessage =
+  | { type: 'metricsUpdated'; metrics: VelocityMetrics }
+  | { type: 'dataRefreshed'; velocityData: VelocityData };
+
+// Analytics Webview → Extension Host
+type AnalyticsCommand =
+  | { type: 'refreshMetrics' }
+  | { type: 'switchTab'; tab: string }
+  | { type: 'exportData'; format: 'csv' | 'json' };
+```
+
+### Performance Considerations
+
+1. **Lazy Calculation**: Only calculate metrics when analytics panel is opened
+2. **Caching**: Cache calculated metrics for 5 minutes to avoid recalculation on every view
+3. **Incremental Updates**: When a task is toggled, update only affected week data
+4. **Efficient Storage**: Store only raw event data, calculate aggregations on-demand
+5. **Debouncing**: Debounce chart re-renders when switching tabs rapidly
+
+### Future Enhancements
+
+1. **Timeline Tab**: Gantt-style view of spec progress over time
+2. **Forecasts Tab**: Machine learning-based completion predictions
+3. **Overview Tab**: Executive summary dashboard with key metrics
+4. **Export**: CSV/JSON export of velocity data
+5. **Comparison**: Compare velocity across different time periods
+6. **Goals**: Set velocity goals and track progress
+7. **Notifications**: Alert when velocity drops below threshold
