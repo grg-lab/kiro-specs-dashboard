@@ -1590,15 +1590,64 @@
          */
         function renderTasksChart(metrics) {
             const container = document.getElementById('tasks-chart');
-            if (!container || !metrics.tasksPerWeek) {
+            if (!container) {
                 return;
             }
             
             container.innerHTML = '';
             
+            // Check if we have any data at all
+            if (!metrics.tasksPerWeek || metrics.tasksPerWeek.length === 0) {
+                // Show empty state message
+                const emptyState = document.createElement('div');
+                emptyState.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--vscode-descriptionForeground);
+                    font-size: 12px;
+                    text-align: center;
+                    padding: 20px;
+                `;
+                emptyState.textContent = 'No task completion data yet';
+                container.appendChild(emptyState);
+                return;
+            }
+            
             // Show only last 10 weeks
             const allData = metrics.tasksPerWeek;
             const data = allData.slice(-10);
+            
+            // Check if there's any data
+            const hasData = data.some(value => value > 0);
+            
+            if (!hasData) {
+                // Show empty state message
+                const emptyState = document.createElement('div');
+                emptyState.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--vscode-descriptionForeground);
+                    font-size: 12px;
+                    text-align: center;
+                    padding: 20px;
+                `;
+                emptyState.textContent = 'No task completion data yet';
+                container.appendChild(emptyState);
+                return;
+            }
+            
             const maxValue = Math.max(...data, 1);
             const currentWeekIndex = data.length - 1;
             
@@ -1654,15 +1703,64 @@
          */
         function renderSpecsChart(metrics) {
             const container = document.getElementById('specs-chart');
-            if (!container || !metrics.specsPerWeek) {
+            if (!container) {
                 return;
             }
             
             container.innerHTML = '';
             
+            // Check if we have any data at all
+            if (!metrics.specsPerWeek || metrics.specsPerWeek.length === 0) {
+                // Show empty state message
+                const emptyState = document.createElement('div');
+                emptyState.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--vscode-descriptionForeground);
+                    font-size: 12px;
+                    text-align: center;
+                    padding: 20px;
+                `;
+                emptyState.textContent = 'No spec completion data yet';
+                container.appendChild(emptyState);
+                return;
+            }
+            
             // Show only last 10 weeks
             const allData = metrics.specsPerWeek;
             const data = allData.slice(-10);
+            
+            // Check if there's any data
+            const hasData = data.some(value => value > 0);
+            
+            if (!hasData) {
+                // Show empty state message
+                const emptyState = document.createElement('div');
+                emptyState.style.cssText = `
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--vscode-descriptionForeground);
+                    font-size: 12px;
+                    text-align: center;
+                    padding: 20px;
+                `;
+                emptyState.textContent = 'No spec completion data yet';
+                container.appendChild(emptyState);
+                return;
+            }
+            
             const maxValue = Math.max(...data, 1);
             const currentWeekIndex = data.length - 1;
             
@@ -1728,11 +1826,29 @@
             const total = data.required + data.optional;
             
             if (total === 0) {
-                // No data - show empty state
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                legendContainer.innerHTML = '<div style="text-align: center; color: var(--vscode-descriptionForeground); padding: 20px;">No data yet</div>';
+                // No data - hide canvas and show empty state message
+                canvas.style.display = 'none';
+                
+                // Clear legend and show empty state message
+                legendContainer.innerHTML = '';
+                const emptyState = document.createElement('div');
+                emptyState.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--vscode-descriptionForeground);
+                    font-size: 12px;
+                    text-align: center;
+                    padding: 60px 20px;
+                    min-height: 120px;
+                `;
+                emptyState.textContent = 'No data yet';
+                legendContainer.appendChild(emptyState);
                 return;
             }
+            
+            // Show canvas if it was hidden
+            canvas.style.display = 'block';
             
             // Calculate percentages
             const requiredPercent = (data.required / total) * 100;

@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Projected Completion: Estimated completion date with progress bar
 - **Mock Data Generator**: Realistic test data generation for development and testing
 - **Responsive Layout**: Stats header adapts to viewport width with flexible button positioning
+- **Empty State Messages**: Charts display helpful messages when no data is available yet
+- **Clear Velocity Data Command**: New command to remove all velocity tracking data
 
 ### Changed
 
@@ -41,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extended `VelocityMetrics` interface with specs tracking
 - Implemented weekly aggregation and consistency scoring algorithms
 - Added time-to-complete categorization (Fast: ≤14 days, Medium: 15-42 days, Slow: ≥43 days)
+- Added `clearVelocityData` method to StateManager
 
 ## [0.1.0] - 2026-01-31
 

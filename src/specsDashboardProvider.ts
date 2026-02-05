@@ -2214,6 +2214,26 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
   }
 
   /**
+   * Get the AnalyticsPanelManager instance
+   * Used by commands that need to refresh analytics
+   * 
+   * @returns AnalyticsPanelManager instance
+   */
+  getAnalyticsPanelManager(): AnalyticsPanelManager {
+    return this.analyticsPanelManager;
+  }
+
+  /**
+   * Get the current specs array
+   * Used by commands that need to access spec data
+   * 
+   * @returns Array of specs
+   */
+  getSpecs(): Array<{ totalTasks: number; completedTasks: number }> {
+    return this.specs;
+  }
+
+  /**
    * Dispose of all resources
    * 
    * This method is called when the extension is deactivated or the provider is disposed.

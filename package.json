@@ -2,7 +2,7 @@
   "name": "kiro-specs-dashboard",
   "displayName": "Kiro Specs Dashboard",
   "description": "Extension for visualizing and tracking Kiro spec features and tasks.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "grg-lab",
   "author": {
     "name": "grg-lab"
@@ -61,6 +61,11 @@
       {
         "command": "specs-dashboard.generateMockData",
         "title": "Generate Mock Velocity Data",
+        "category": "Kiro"
+      },
+      {
+        "command": "specs-dashboard.clearVelocityData",
+        "title": "Clear Velocity Data",
         "category": "Kiro"
       }
     ],

@@ -275,6 +275,19 @@ export class AnalyticsPanelManager {
   }
 
   /**
+   * Reinitialize the velocity calculator
+   * 
+   * Forces the velocity calculator to reload data from workspace state.
+   * Useful after clearing velocity data to ensure the calculator has fresh data.
+   */
+  public async reinitializeVelocityCalculator(): Promise<void> {
+    this.outputChannel.appendLine(
+      `[${new Date().toISOString()}] Reinitializing velocity calculator`
+    );
+    await this.velocityCalculator.initialize();
+  }
+
+  /**
    * Generate HTML content for the analytics webview
    * 
    * Loads the analytics.html template and replaces placeholders with:

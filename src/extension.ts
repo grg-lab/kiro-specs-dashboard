@@ -69,6 +69,35 @@ export function activate(context: vscode.ExtensionContext): void {
     'specs-dashboard.generateMockData',
     async () => {
       await generateMockVelocityData(provider.getStateManager());
+      // Reinitialize velocity calculator with new data
+      await provider.getAnalyticsPanelManager().reinitializeVelocityCalculator();
+      vscode.window.showInformationMessage('Mock velocity data generated successfully.');
+      // Refresh both the dashboard and analytics panel
+      await provider.refresh();
+      // Force analytics panel to recalculate with new velocity data
+      provider.getAnalyticsPanelManager().notifyDataRefreshed(provider.getSpecs());
+    }
+  );
+
+  const clearVelocityDataCommand = vscode.commands.registerCommand(
+    'specs-dashboard.clearVelocityData',
+    async () => {
+      const answer = await vscode.window.showWarningMessage(
+        'Are you sure you want to clear all velocity data? This action cannot be undone.',
+        'Clear Data',
+        'Cancel'
+      );
+      
+      if (answer === 'Clear Data') {
+        await provider.getStateManager().clearVelocityData();
+        // Reinitialize velocity calculator with empty data
+        await provider.getAnalyticsPanelManager().reinitializeVelocityCalculator();
+        vscode.window.showInformationMessage('Velocity data cleared successfully.');
+        // Refresh both the dashboard and analytics panel
+        await provider.refresh();
+        // Force analytics panel to recalculate with empty velocity data
+        provider.getAnalyticsPanelManager().notifyDataRefreshed(provider.getSpecs());
+      }
     }
   );
 
@@ -132,6 +161,7 @@ export function activate(context: vscode.ExtensionContext): void {
     openFileCommand,
     openNotesCommand,
     generateMockDataCommand,
+    clearVelocityDataCommand,
     watcher,
     workspaceFoldersChangeListener,
     // Dispose of debounce timer on deactivation

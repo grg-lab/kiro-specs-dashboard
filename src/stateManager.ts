@@ -307,6 +307,22 @@ export class StateManager {
   }
 
   /**
+   * Clear all velocity data
+   * 
+   * Removes all velocity tracking data from workspace state.
+   * This is useful for resetting analytics or removing mock data.
+   */
+  async clearVelocityData(): Promise<void> {
+    try {
+      await this.workspaceState.update('velocityData', undefined);
+      console.log('Cleared all velocity data');
+    } catch (error) {
+      console.error('Error clearing velocity data:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get the default dashboard state
    */
   private getDefaultState(): DashboardState {

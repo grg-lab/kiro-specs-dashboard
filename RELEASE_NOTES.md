@@ -51,6 +51,7 @@ Development command to generate realistic test data for the Metrics panel.
 - Fixed section separator contrast in dark themes
 - Removed dividing line from pie chart for cleaner appearance
 - Fixed Day of Week chart bar spacing and alignment
+- Added empty state messages to charts when no data is available
 
 ### 🛠️ Technical
 
@@ -59,6 +60,7 @@ Development command to generate realistic test data for the Metrics panel.
 - Implemented weekly aggregation and consistency scoring algorithms
 - Added time-to-complete categorization logic
 - Organized mock data scripts into `mocks/` folder
+- Added `clearVelocityData` method to StateManager for data management
 
 ---
 

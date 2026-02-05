@@ -38,6 +38,7 @@ This extension only reads and writes files in your workspace's `.kiro/specs/` di
 - **Rich Text Notes**: Add formatted notes to any spec with WYSIWYG editor supporting bold, strikethrough, lists, and links
 - **Notes Management**: Sort notes by recently updated, recently created, or oldest first with configurable pagination (10, 20, or show all)
 - **Notes Persistence**: Notes are saved per spec and persist across sessions with creation and update timestamps
+- **Metrics & Analytics**: Comprehensive velocity tracking and performance analytics with visual charts and insights
 
 ## Getting Started
 
@@ -92,6 +93,35 @@ Use the search bar to filter specs by name. Use the filter buttons to show:
 - **Done**: Specs with all tasks completed
 - **Todo**: Specs with no tasks completed
 
+### Metrics & Analytics
+
+Click the **Metrics** button in the dashboard header to access comprehensive velocity tracking and performance analytics.
+
+**Velocity Tab** provides:
+
+**Specs Performance**:
+- Current week specs completed
+- Average specs per week
+- Consistency score and rating
+- 10-week completion trend chart
+
+**Tasks Performance**:
+- Current week tasks completed
+- Average tasks per week
+- Consistency score and rating
+- 10-week completion trend chart
+
+**Additional Insights**:
+- **Required vs Optional**: Pie chart showing the distribution of required and optional tasks
+- **Day of Week**: Horizontal bar chart showing which days you complete the most tasks
+- **Avg Time to Complete**: Shows how long specs take to complete on average, with breakdown:
+  - Fast: ≤14 days
+  - Medium: 15-42 days
+  - Slow: ≥43 days
+- **Projected Completion**: Estimated completion date for remaining work with progress bar
+
+The Metrics panel automatically tracks your progress as you complete tasks and specs, providing insights into your development velocity and patterns.
+
 ## Requirements
 
 - VSCode 1.74.0 or higher
@@ -105,6 +135,7 @@ This extension provides the following commands:
 
 - **Kiro: Show Specs Dashboard** (`specs-dashboard.show`) - Open the Specs Dashboard view
 - **Kiro: Refresh Specs Dashboard** (`specs-dashboard.refresh`) - Manually refresh the dashboard data
+- **Kiro: Open Spec File** (`specs-dashboard.openFile`) - Open a specific spec file (requirements, design, or tasks)
 
 ### Development Commands
 
@@ -113,6 +144,11 @@ This extension provides the following commands:
   - Useful for testing and demonstrating the analytics features
   - Data includes weekly trends, day-of-week patterns, and spec lifecycle events
   - See `mocks/README.md` for more details on the mock data structure
+- **Kiro: Clear Velocity Data** (`specs-dashboard.clearVelocityData`) - Clear all velocity tracking data
+  - Removes all velocity metrics and analytics data
+  - Useful for resetting analytics or removing mock data
+  - Shows confirmation dialog before clearing
+  - Does not affect other workspace state (notes, filters, etc.)
 
 ## Extension Settings
 
