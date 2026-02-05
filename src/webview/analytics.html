@@ -1682,18 +1682,25 @@
             });
             
             // Add average line if we have data
-            if (metrics.averageVelocity && metrics.averageVelocity > 0) {
-                const avgLine = document.createElement('div');
-                avgLine.className = 'bar-chart-average-line';
-                const avgPercent = (metrics.averageVelocity / maxValue) * 100;
-                avgLine.style.bottom = avgPercent + '%';
+            // Calculate average across the 10 weeks shown in the chart
+            if (data.length > 0) {
+                const chartAverage = data.reduce((sum, val) => sum + val, 0) / data.length;
                 
-                const avgLabel = document.createElement('div');
-                avgLabel.className = 'bar-chart-average-label';
-                avgLabel.textContent = `Avg: ${metrics.averageVelocity.toFixed(1)}`;
-                avgLine.appendChild(avgLabel);
-                
-                container.appendChild(avgLine);
+                if (chartAverage > 0) {
+                    const avgLine = document.createElement('div');
+                    avgLine.className = 'bar-chart-average-line';
+                    const avgPercent = (chartAverage / maxValue) * 100;
+                    avgLine.style.bottom = avgPercent + '%';
+                    avgLine.style.left = '0';
+                    avgLine.style.right = '0';
+                    
+                    const avgLabel = document.createElement('div');
+                    avgLabel.className = 'bar-chart-average-label';
+                    avgLabel.textContent = `Avg: ${chartAverage.toFixed(1)}`;
+                    avgLine.appendChild(avgLabel);
+                    
+                    container.appendChild(avgLine);
+                }
             }
         }
         
@@ -1794,19 +1801,26 @@
                 container.appendChild(bar);
             });
             
-            // Add average line if we have specs average
-            if (metrics.averageSpecs && metrics.averageSpecs > 0) {
-                const avgLine = document.createElement('div');
-                avgLine.className = 'bar-chart-average-line';
-                const avgPercent = (metrics.averageSpecs / maxValue) * 100;
-                avgLine.style.bottom = avgPercent + '%';
+            // Add average line if we have specs data
+            // Calculate average across the 10 weeks shown in the chart
+            if (data.length > 0) {
+                const chartAverage = data.reduce((sum, val) => sum + val, 0) / data.length;
                 
-                const avgLabel = document.createElement('div');
-                avgLabel.className = 'bar-chart-average-label';
-                avgLabel.textContent = `Avg: ${metrics.averageSpecs.toFixed(1)}`;
-                avgLine.appendChild(avgLabel);
-                
-                container.appendChild(avgLine);
+                if (chartAverage > 0) {
+                    const avgLine = document.createElement('div');
+                    avgLine.className = 'bar-chart-average-line';
+                    const avgPercent = (chartAverage / maxValue) * 100;
+                    avgLine.style.bottom = avgPercent + '%';
+                    avgLine.style.left = '0';
+                    avgLine.style.right = '0';
+                    
+                    const avgLabel = document.createElement('div');
+                    avgLabel.className = 'bar-chart-average-label';
+                    avgLabel.textContent = `Avg: ${chartAverage.toFixed(1)}`;
+                    avgLine.appendChild(avgLabel);
+                    
+                    container.appendChild(avgLine);
+                }
             }
         }
         
