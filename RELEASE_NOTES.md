@@ -1,4 +1,68 @@
-# 🎉 Kiro Specs Dashboard v0.1.0
+# Release Notes
+
+## 🎉 v0.1.1 - Metrics & Analytics
+
+**Release Date:** February 5, 2026
+
+### 📊 What's New
+
+#### **Metrics Panel**
+A comprehensive analytics dashboard to track your development velocity and patterns.
+
+**Access:** Click the "Metrics" button in the dashboard header
+
+#### **Velocity Tab**
+Track your performance with detailed metrics and visualizations:
+
+**Specs Performance**
+- Current week specs completed
+- Average specs per week
+- Consistency score and rating
+- 10-week completion trend chart
+
+**Tasks Performance**
+- Current week tasks completed
+- Average tasks per week
+- Consistency score and rating
+- 10-week completion trend chart
+
+**Additional Insights**
+- **Required vs Optional**: Pie chart showing task distribution
+- **Day of Week**: Horizontal bar chart showing completion patterns by weekday
+- **Avg Time to Complete**: Spec completion timeline with Fast (≤14 days), Medium (15-42 days), and Slow (≥43 days) breakdown
+- **Projected Completion**: Estimated completion date with progress bar
+
+#### **Mock Data Generator**
+Development command to generate realistic test data for the Metrics panel.
+
+**Usage:** Run command `Kiro: Generate Mock Velocity Data`
+
+### 🎨 Improvements
+
+- Renamed "Analytics" button to "Metrics" for clarity
+- Responsive stats header layout that adapts to viewport width
+- Enhanced chart styling with solid colors and consistent blue theme
+- Improved section separators for better visual hierarchy
+- Added legend to "Avg Time to Complete" metric explaining Fast/Medium/Slow categories
+
+### 🐛 Fixes
+
+- Fixed progress bar visibility in Velocity tab
+- Fixed section separator contrast in dark themes
+- Removed dividing line from pie chart for cleaner appearance
+- Fixed Day of Week chart bar spacing and alignment
+
+### 🛠️ Technical
+
+- Added `VelocityCalculator` for metrics computation
+- Extended `VelocityMetrics` interface with specs tracking
+- Implemented weekly aggregation and consistency scoring algorithms
+- Added time-to-complete categorization logic
+- Organized mock data scripts into `mocks/` folder
+
+---
+
+## 🎉 v0.1.0 - Initial Release
 
 **Release Date:** January 31, 2026
 

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { SpecsDashboardProvider } from './specsDashboardProvider';
+import { generateMockVelocityData } from './mockDataGenerator';
 
 /**
  * Extension activation function
@@ -64,6 +65,13 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   );
 
+  const generateMockDataCommand = vscode.commands.registerCommand(
+    'specs-dashboard.generateMockData',
+    async () => {
+      await generateMockVelocityData(provider.getStateManager());
+    }
+  );
+
   // Set up file system watcher for spec files with debouncing
   const watcher = vscode.workspace.createFileSystemWatcher(
     '**/.kiro/specs/**/*.md'
@@ -78,22 +86,24 @@ export function activate(context: vscode.ExtensionContext): void {
    * Delays the refresh until no file changes have occurred for DEBOUNCE_DELAY_MS
    * This prevents excessive re-parsing when multiple files are saved rapidly
    * 
-   * Requirements: 3.1, 13.1 (debouncing for performance)
+   * Also detects task changes and records velocity data
+   * 
+   * Requirements: 3.1, 13.1 (debouncing for performance), 19.2 (velocity tracking)
    */
-  const debouncedRefresh = () => {
+  const debouncedRefresh = (uri?: vscode.Uri) => {
     if (debounceTimer) {
       clearTimeout(debounceTimer);
     }
     
     debounceTimer = setTimeout(() => {
-      provider.refresh();
+      provider.refresh(uri);
       debounceTimer = undefined;
     }, DEBOUNCE_DELAY_MS);
   };
 
-  watcher.onDidChange(debouncedRefresh);
-  watcher.onDidCreate(debouncedRefresh);
-  watcher.onDidDelete(debouncedRefresh);
+  watcher.onDidChange((uri) => debouncedRefresh(uri));
+  watcher.onDidCreate((uri) => debouncedRefresh(uri));
+  watcher.onDidDelete((uri) => debouncedRefresh(uri));
 
   // Handle workspace folder changes for multi-root workspace support
   // Requirements: 12.2, 12.3 (clean up watchers and state when workspaces are removed)
@@ -121,6 +131,7 @@ export function activate(context: vscode.ExtensionContext): void {
     refreshCommand,
     openFileCommand,
     openNotesCommand,
+    generateMockDataCommand,
     watcher,
     workspaceFoldersChangeListener,
     // Dispose of debounce timer on deactivation

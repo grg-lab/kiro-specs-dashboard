@@ -144,6 +144,169 @@ export class StateManager {
   }
 
   /**
+   * Get velocity data for analytics
+   * 
+   * Handles missing or corrupted data gracefully by:
+   * - Returning null if data doesn't exist
+   * - Validating data structure
+   * - Returning null if data is corrupted
+   * - Logging errors for debugging
+   * 
+   * Requirements: 19.6, 23.3, 23.5
+   */
+  async getVelocityData(): Promise<any> {
+    try {
+      const data = this.workspaceState.get('velocityData', null);
+      
+      if (!data) {
+        return null;
+      }
+      
+      // Validate velocity data structure
+      if (!this.isValidVelocityData(data)) {
+        console.warn('Corrupted velocity data detected, returning null:', data);
+        vscode.window.showWarningMessage(
+          'Velocity data was corrupted and has been reset. Analytics will start fresh.'
+        );
+        // Clear corrupted data
+        await this.workspaceState.update('velocityData', undefined);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error loading velocity data:', error);
+      vscode.window.showErrorMessage(
+        'Failed to load velocity data: ' + (error instanceof Error ? error.message : String(error))
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Save velocity data for analytics
+   * 
+   * Requirements: 19.6
+   */
+  async saveVelocityData(velocityData: any): Promise<void> {
+    try {
+      await this.workspaceState.update('velocityData', velocityData);
+    } catch (error) {
+      console.error('Error saving velocity data:', error);
+      vscode.window.showErrorMessage(
+        'Failed to save velocity data: ' + (error instanceof Error ? error.message : String(error))
+      );
+    }
+  }
+
+  /**
+   * Get the last active analytics tab
+   * 
+   * Returns the name of the last active tab in the analytics panel,
+   * or 'velocity' as the default if no saved state exists.
+   * 
+   * Requirements: 23.1, 23.2
+   */
+  async getActiveAnalyticsTab(): Promise<string> {
+    try {
+      return this.workspaceState.get('activeAnalyticsTab', 'velocity');
+    } catch (error) {
+      console.error('Error loading active analytics tab:', error);
+      return 'velocity';
+    }
+  }
+
+  /**
+   * Save the active analytics tab
+   * 
+   * Persists the currently active tab name to workspace state
+   * so it can be restored when the analytics panel is reopened.
+   * 
+   * Requirements: 23.1, 23.2
+   */
+  async saveActiveAnalyticsTab(tabName: string): Promise<void> {
+    try {
+      await this.workspaceState.update('activeAnalyticsTab', tabName);
+    } catch (error) {
+      console.error('Error saving active analytics tab:', error);
+    }
+  }
+
+  /**
+   * Get velocity data for a specific workspace folder
+   * 
+   * This allows maintaining separate velocity data per workspace folder
+   * in multi-root workspaces.
+   * 
+   * @param workspaceFolderName The name of the workspace folder
+   * @returns The velocity data for that workspace folder, or null if not found
+   * 
+   * Requirements: 23.4
+   */
+  async getWorkspaceFolderVelocityData(workspaceFolderName: string): Promise<any> {
+    try {
+      const key = `velocityData_${workspaceFolderName}`;
+      const data = this.workspaceState.get(key, null);
+      
+      if (!data) {
+        return null;
+      }
+      
+      // Validate velocity data structure
+      if (!this.isValidVelocityData(data)) {
+        console.warn(`Corrupted velocity data for workspace folder ${workspaceFolderName}, returning null`);
+        // Clear corrupted data
+        await this.workspaceState.update(key, undefined);
+        return null;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error(`Error loading velocity data for workspace folder ${workspaceFolderName}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Save velocity data for a specific workspace folder
+   * 
+   * This allows maintaining separate velocity data per workspace folder
+   * in multi-root workspaces.
+   * 
+   * @param workspaceFolderName The name of the workspace folder
+   * @param velocityData The velocity data to save
+   * 
+   * Requirements: 23.4
+   */
+  async saveWorkspaceFolderVelocityData(workspaceFolderName: string, velocityData: any): Promise<void> {
+    try {
+      const key = `velocityData_${workspaceFolderName}`;
+      await this.workspaceState.update(key, velocityData);
+    } catch (error) {
+      console.error(`Error saving velocity data for workspace folder ${workspaceFolderName}:`, error);
+    }
+  }
+
+  /**
+   * Clear velocity data for a specific workspace folder
+   * 
+   * Called when a workspace folder is removed from the workspace.
+   * 
+   * @param workspaceFolderName The name of the workspace folder to clear data for
+   * 
+   * Requirements: 23.4
+   */
+  async clearWorkspaceFolderVelocityData(workspaceFolderName: string): Promise<void> {
+    try {
+      const key = `velocityData_${workspaceFolderName}`;
+      await this.workspaceState.update(key, undefined);
+      console.log(`Cleared velocity data for workspace folder: ${workspaceFolderName}`);
+    } catch (error) {
+      console.error(`Error clearing velocity data for workspace folder ${workspaceFolderName}:`, error);
+    }
+  }
+
+  /**
    * Get the default dashboard state
    */
   private getDefaultState(): DashboardState {
@@ -171,5 +334,38 @@ export class StateManager {
       ['name', 'progress'].includes(state.sortBy) &&
       ['asc', 'desc'].includes(state.sortOrder)
     );
+  }
+
+  /**
+   * Validate velocity data structure
+   * 
+   * Checks that velocity data has the expected structure:
+   * - weeklyTasks array
+   * - weeklySpecs array
+   * - specActivity object
+   * - dayOfWeekTasks object
+   * 
+   * Requirements: 23.5
+   */
+  private isValidVelocityData(data: any): boolean {
+    try {
+      return (
+        data &&
+        typeof data === 'object' &&
+        Array.isArray(data.weeklyTasks) &&
+        Array.isArray(data.weeklySpecs) &&
+        typeof data.specActivity === 'object' &&
+        data.specActivity !== null &&
+        typeof data.dayOfWeekTasks === 'object' &&
+        data.dayOfWeekTasks !== null &&
+        // Validate dayOfWeekTasks has all required days
+        ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].every(
+          day => typeof data.dayOfWeekTasks[day] === 'number'
+        )
+      );
+    } catch (error) {
+      console.error('Error validating velocity data:', error);
+      return false;
+    }
   }
 }

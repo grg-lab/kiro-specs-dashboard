@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { SpecScanner } from './specScanner';
 import { StateManager } from './stateManager';
+import { VelocityCalculator } from './velocityCalculator';
+import { AnalyticsPanelManager } from './analyticsPanelManager';
 import { SpecFile } from './types';
 
 /**
@@ -11,6 +13,8 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
   private scanner: SpecScanner;
   private stateManager: StateManager;
+  private velocityCalculator: VelocityCalculator;
+  private analyticsPanelManager: AnalyticsPanelManager;
   private specs: SpecFile[] = [];
   private outputChannel: vscode.OutputChannel;
   private isWebviewVisible: boolean = false;
@@ -20,7 +24,19 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
   constructor(private context: vscode.ExtensionContext) {
     this.scanner = new SpecScanner();
     this.stateManager = new StateManager(context);
+    this.velocityCalculator = new VelocityCalculator(this.stateManager);
     this.outputChannel = vscode.window.createOutputChannel('Specs Dashboard');
+    this.analyticsPanelManager = new AnalyticsPanelManager(
+      context,
+      this.velocityCalculator,
+      this.stateManager,
+      this.outputChannel
+    );
+    
+    // Initialize velocity calculator
+    this.velocityCalculator.initialize().catch(error => {
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: Failed to initialize velocity calculator: ${error}`);
+    });
   }
 
   /**
@@ -90,8 +106,8 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
    * 
    * Requirements: 3.2, 3.3, 3.4, 13.5
    */
-  async refresh(): Promise<void> {
-    console.log('Refreshing specs dashboard...');
+  async refresh(uri?: vscode.Uri): Promise<void> {
+    console.log('Refreshing specs dashboard...', uri?.fsPath || 'all specs');
     
     // Performance optimization: Defer refresh if webview is hidden (Requirement 13.5)
     if (!this.isWebviewVisible) {
@@ -111,14 +127,18 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
    * 
    * This method:
    * - Clears the dashboard state for the removed workspace folder
+   * - Clears the velocity data for the removed workspace folder
    * - Removes specs from the internal state that belong to the removed folder
    * 
-   * Requirements: 12.2, 12.3
+   * Requirements: 12.2, 12.3, 23.4
    */
   async cleanupWorkspaceFolder(workspaceFolderName: string): Promise<void> {
     try {
       // Clear the state for this workspace folder
       await this.stateManager.clearWorkspaceFolderState(workspaceFolderName);
+      
+      // Clear the velocity data for this workspace folder (Requirement: 23.4)
+      await this.stateManager.clearWorkspaceFolderVelocityData(workspaceFolderName);
       
       // Remove specs from internal state that belong to this workspace folder
       const previousCount = this.specs.length;
@@ -137,20 +157,27 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
    * This method:
    * - Scans all workspace folders for .kiro/specs directories
    * - Parses all spec files and extracts metadata
+   * - Detects task changes and records velocity data
    * - Updates internal state with the new spec data
    * - Sends updated data to the webview via message passing (only if visible)
    * - Loads and sends the saved dashboard state to restore view preferences
    * - Handles errors gracefully and reports them to the webview
    * 
-   * Requirements: 3.2, 3.3, 3.4, 4.3, 4.4, 11.1, 13.5
+   * Requirements: 3.2, 3.3, 3.4, 4.3, 4.4, 11.1, 13.5, 19.2
    */
   private async loadSpecs(): Promise<void> {
     try {
+      // Store previous specs for comparison
+      const previousSpecs = new Map(this.specs.map(spec => [spec.name, spec]));
+      
       const previousCount = this.specs.length;
       this.specs = await this.scanner.scanWorkspace();
       const currentCount = this.specs.length;
 
       this.outputChannel.appendLine(`[${new Date().toISOString()}] Loaded ${currentCount} spec(s) (previously ${previousCount})`);
+
+      // Detect task changes and record velocity data
+      await this.detectAndRecordTaskChanges(previousSpecs, this.specs);
 
       // Only send updates to webview if it's visible (Requirement 13.5)
       if (this.view && this.isWebviewVisible) {
@@ -252,6 +279,12 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
             return;
           }
           await this.stateManager.saveDashboardState(message.state);
+          break;
+        
+        case 'openAnalytics':
+          // Open the analytics panel
+          this.outputChannel.appendLine(`[${new Date().toISOString()}] Opening analytics panel`);
+          this.analyticsPanelManager.openAnalytics(this.specs);
           break;
         
         case 'addNote':
@@ -423,20 +456,34 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
         return;
       }
 
+      // Extract task metadata for velocity tracking
+      const taskMatch = line.match(/^(\s*)-\s*\[([ x])\](\*)?/);
+      const wasCompleted = taskMatch![2] === 'x';
+      const isOptional = taskMatch![3] === '*';
+      const isRequired = !isOptional;
+      
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] Task state before toggle: wasCompleted=${wasCompleted}, isOptional=${isOptional}, line="${line.trim()}"`);
+
       // Toggle checkbox state while preserving all other formatting
       let updatedLine: string;
+      let isNowCompleted: boolean;
       if (line.includes('- [x]')) {
         // Change [x] to [ ]
         updatedLine = line.replace(/- \[x\]/, '- [ ]');
+        isNowCompleted = false;
       } else if (line.includes('- [ ]')) {
         // Change [ ] to [x]
         updatedLine = line.replace(/- \[ \]/, '- [x]');
+        isNowCompleted = true;
       } else {
         const errorMsg = `Could not parse checkbox state on line ${taskLine}`;
         this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: ${errorMsg}`);
         vscode.window.showErrorMessage(errorMsg);
         return;
       }
+      
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] Task state after toggle: isNowCompleted=${isNowCompleted}, updatedLine="${updatedLine.trim()}"`);
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] Will record velocity? ${isNowCompleted && !wasCompleted}`);
 
       // Update the line in the array
       lines[taskLine] = updatedLine;
@@ -481,6 +528,58 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
       spec.optionalTasks = taskStats.optionalTasks;
       spec.progress = taskStats.progress;
       
+      // Record task completion in velocity tracker (Requirements: 19.2, 19.6)
+      // Only record when task is marked as completed (not when uncompleted)
+      if (isNowCompleted && !wasCompleted) {
+        try {
+          const taskId = `line-${taskLine}`;
+          await this.velocityCalculator.recordTaskCompletion(
+            specName,
+            taskId,
+            isRequired,
+            new Date()
+          );
+          this.outputChannel.appendLine(
+            `[${new Date().toISOString()}] Recorded task completion for velocity tracking: ${specName}, ${isRequired ? 'required' : 'optional'}`
+          );
+        } catch (velocityError) {
+          // Log error but don't fail the task toggle
+          this.outputChannel.appendLine(
+            `[${new Date().toISOString()}] WARNING: Failed to record velocity data: ${velocityError}`
+          );
+        }
+      }
+      
+      // Update spec progress tracking (Requirements: 21.4, 21.5, 21.6)
+      try {
+        await this.velocityCalculator.updateSpecProgress(
+          specName,
+          spec.totalTasks,
+          spec.completedTasks
+        );
+        this.outputChannel.appendLine(
+          `[${new Date().toISOString()}] Updated spec progress tracking: ${specName} (${spec.completedTasks}/${spec.totalTasks})`
+        );
+      } catch (velocityError) {
+        // Log error but don't fail the task toggle
+        this.outputChannel.appendLine(
+          `[${new Date().toISOString()}] WARNING: Failed to update spec progress: ${velocityError}`
+        );
+      }
+      
+      // Notify analytics panel of data refresh (Requirements: 18.3, 22.9)
+      try {
+        this.analyticsPanelManager.notifyDataRefreshed(this.specs);
+        this.outputChannel.appendLine(
+          `[${new Date().toISOString()}] Notified analytics panel of data refresh`
+        );
+      } catch (analyticsError) {
+        // Log error but don't fail the task toggle
+        this.outputChannel.appendLine(
+          `[${new Date().toISOString()}] WARNING: Failed to notify analytics panel: ${analyticsError}`
+        );
+      }
+      
       // Send immediate update to webview
       if (this.view) {
         this.view.webview.postMessage({
@@ -508,6 +607,113 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
         }
       });
     }
+  }
+
+  /**
+   * Detect task changes between previous and current specs and record velocity data
+   * 
+   * This method compares the previous state of tasks with the current state
+   * and records any tasks that changed from uncompleted to completed.
+   * 
+   * @param previousSpecs Map of previous spec states (name -> SpecFile)
+   * @param currentSpecs Array of current spec states
+   * 
+   * Requirements: 19.2, 19.6
+   */
+  private async detectAndRecordTaskChanges(
+    previousSpecs: Map<string, SpecFile>,
+    currentSpecs: SpecFile[]
+  ): Promise<void> {
+    for (const currentSpec of currentSpecs) {
+      const previousSpec = previousSpecs.get(currentSpec.name);
+      
+      // Skip if this is a new spec (no previous state to compare)
+      if (!previousSpec || !previousSpec.tasksContent || !currentSpec.tasksContent) {
+        continue;
+      }
+      
+      // Parse tasks from both versions
+      const previousTasks = this.parseTasksFromContent(previousSpec.tasksContent);
+      const currentTasks = this.parseTasksFromContent(currentSpec.tasksContent);
+      
+      // Find tasks that changed from uncompleted to completed
+      for (let i = 0; i < Math.min(previousTasks.length, currentTasks.length); i++) {
+        const prevTask = previousTasks[i];
+        const currTask = currentTasks[i];
+        
+        // Check if task went from uncompleted to completed
+        if (!prevTask.completed && currTask.completed) {
+          this.outputChannel.appendLine(
+            `[${new Date().toISOString()}] Detected task completion: ${currentSpec.name}, line ${i}, ${currTask.isOptional ? 'optional' : 'required'}`
+          );
+          
+          try {
+            await this.velocityCalculator.recordTaskCompletion(
+              currentSpec.name,
+              `line-${i}`,
+              !currTask.isOptional,
+              new Date(),
+              currTask.description
+            );
+            
+            this.outputChannel.appendLine(
+              `[${new Date().toISOString()}] Recorded velocity data for task completion`
+            );
+          } catch (error) {
+            this.outputChannel.appendLine(
+              `[${new Date().toISOString()}] WARNING: Failed to record velocity data: ${error}`
+            );
+          }
+        }
+      }
+      
+      // Update spec progress tracking
+      try {
+        await this.velocityCalculator.updateSpecProgress(
+          currentSpec.name,
+          currentSpec.totalTasks,
+          currentSpec.completedTasks
+        );
+      } catch (error) {
+        this.outputChannel.appendLine(
+          `[${new Date().toISOString()}] WARNING: Failed to update spec progress: ${error}`
+        );
+      }
+    }
+    
+    // Notify analytics panel if it's open
+    try {
+      this.analyticsPanelManager.notifyDataRefreshed(this.specs);
+    } catch (error) {
+      this.outputChannel.appendLine(
+        `[${new Date().toISOString()}] WARNING: Failed to notify analytics panel: ${error}`
+      );
+    }
+  }
+
+  /**
+   * Parse tasks from markdown content
+   * 
+   * Returns an array of task objects with completion state, optional flag, and description
+   * 
+   * @param content Markdown content containing tasks
+   * @returns Array of parsed tasks
+   */
+  private parseTasksFromContent(content: string): Array<{ completed: boolean; isOptional: boolean; description: string }> {
+    const tasks: Array<{ completed: boolean; isOptional: boolean; description: string }> = [];
+    const lines = content.split('\n');
+    
+    for (const line of lines) {
+      const taskMatch = line.match(/^(\s*)-\s*\[([ x~-])\](\*)?\s*(.*)$/);
+      if (taskMatch) {
+        const completed = taskMatch[2] === 'x';
+        const isOptional = taskMatch[3] === '*';
+        const description = taskMatch[4] || '';
+        tasks.push({ completed, isOptional, description });
+      }
+    }
+    
+    return tasks;
   }
 
   /**
@@ -1998,6 +2204,16 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
   }
 
   /**
+   * Get the StateManager instance
+   * Used by mock data generator to access state management
+   * 
+   * @returns StateManager instance
+   */
+  getStateManager(): StateManager {
+    return this.stateManager;
+  }
+
+  /**
    * Dispose of all resources
    * 
    * This method is called when the extension is deactivated or the provider is disposed.
@@ -2029,6 +2245,11 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
       panel.dispose();
     });
     this.notesPanels.clear();
+    
+    // Dispose analytics panel manager
+    if (this.analyticsPanelManager) {
+      this.analyticsPanelManager.dispose();
+    }
     
     // Clear webview reference and visibility tracking
     // Note: The webview itself is managed by VSCode and will be disposed automatically

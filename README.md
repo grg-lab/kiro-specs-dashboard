@@ -97,6 +97,23 @@ Use the search bar to filter specs by name. Use the filter buttons to show:
 - VSCode 1.74.0 or higher
 - Workspace with `.kiro/specs/` directories containing spec files
 
+## Commands
+
+This extension provides the following commands:
+
+### User Commands
+
+- **Kiro: Show Specs Dashboard** (`specs-dashboard.show`) - Open the Specs Dashboard view
+- **Kiro: Refresh Specs Dashboard** (`specs-dashboard.refresh`) - Manually refresh the dashboard data
+
+### Development Commands
+
+- **Kiro: Generate Mock Velocity Data** (`specs-dashboard.generateMockData`) - Generate realistic mock velocity data for testing the Metrics panel
+  - Creates 12 weeks of mock task and spec completion data
+  - Useful for testing and demonstrating the analytics features
+  - Data includes weekly trends, day-of-week patterns, and spec lifecycle events
+  - See `mocks/README.md` for more details on the mock data structure
+
 ## Extension Settings
 
 This extension contributes the following settings:

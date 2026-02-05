@@ -41,10 +41,17 @@
             border-bottom: 1px solid var(--vscode-panel-border);
             padding: 8px 12px;
             display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 16px;
+            font-size: 11px;
+        }
+
+        .stats-row {
+            display: flex;
             align-items: center;
             gap: 16px;
-            flex-wrap: wrap;
-            font-size: 11px;
+            flex: 1 1 auto;
         }
 
         .stat-item {
@@ -52,12 +59,44 @@
             align-items: center;
             gap: 4px;
             color: var(--vscode-descriptionForeground);
+            white-space: nowrap;
         }
 
         .stat-value {
             font-family: var(--vscode-editor-font-family);
             font-weight: 600;
             color: var(--vscode-foreground);
+        }
+
+        .button-row {
+            display: flex;
+        }
+
+        .analytics-button {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            padding: 4px 12px;
+            border-radius: 2px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-family: var(--vscode-font-family);
+        }
+
+        .analytics-button:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .analytics-button:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .analytics-button .codicon {
+            font-size: 14px;
         }
 
         /* Filter Controls - Native Input Styling */
@@ -719,21 +758,29 @@
         <div id="statsContainer" style="display: none;">
             <!-- Statistics Header - Compact, Inline -->
             <div class="stats-header">
-                <div class="stat-item">
-                    <span class="stat-value" id="totalSpecs">0</span>
-                    <span>specs</span>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <span class="stat-value" id="totalSpecs">0</span>
+                        <span>specs</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="completedTasks">0</span>
+                        <span>done</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="pendingTasks">0</span>
+                        <span>todo</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="overallPercentage">0%</span>
+                        <span>total</span>
+                    </div>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="completedTasks">0</span>
-                    <span>done</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="pendingTasks">0</span>
-                    <span>todo</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="overallPercentage">0%</span>
-                    <span>total</span>
+                <div class="button-row">
+                    <button class="analytics-button" id="analyticsBtn">
+                        <span class="codicon codicon-graph"></span>
+                        Metrics
+                    </button>
                 </div>
             </div>
 
@@ -1084,6 +1131,14 @@
                     applyFilters();
                 });
             });
+            
+            // Analytics button click handler
+            const analyticsBtn = document.getElementById('analyticsBtn');
+            if (analyticsBtn) {
+                analyticsBtn.addEventListener('click', () => {
+                    vscode.postMessage({ type: 'openAnalytics' });
+                });
+            }
             
             itemsPerPageSelect.addEventListener('change', (e) => {
                 currentState.itemsPerPage = e.target.value === 'all' ? 'all' : parseInt(e.target.value);

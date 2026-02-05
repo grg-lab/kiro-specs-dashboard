@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'none'; 
+                   style-src {{cspSource}} 'unsafe-inline'; 
+                   script-src 'nonce-{{nonce}}'; 
+                   font-src {{cspSource}};">
+    <link rel="stylesheet" href="{{codiconsUri}}">
+    <title>Analytics - Kiro Specs Dashboard</title>
+    <style nonce="{{nonce}}">
+        /* Native IDE Styling - VSCode Design System */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--vscode-font-family);
+            font-size: 13px;
+            color: var(--vscode-foreground);
+            background: var(--vscode-editor-background);
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        .analytics-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Tab Navigation - VSCode Style */
+        .analytics-tabs {
+            display: flex;
+            background: var(--vscode-editorGroupHeader-tabsBackground);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding: 0;
+            gap: 0;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: transparent;
+            color: var(--vscode-tab-inactiveForeground);
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-family: var(--vscode-font-family);
+            font-size: 13px;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: none;
+        }
+
+        .tab:hover {
+            background: var(--vscode-tab-hoverBackground);
+            color: var(--vscode-tab-hoverForeground);
+        }
+
+        .tab.active {
+            background: var(--vscode-tab-activeBackground);
+            color: var(--vscode-tab-activeForeground);
+            border-bottom-color: var(--vscode-tab-activeBorderTop);
+        }
+
+        .tab:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Placeholder Styling */
+        .placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .placeholder h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--vscode-foreground);
+        }
+
+        .placeholder p {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Velocity Tab Styling (will be implemented in 25.4) */
+        .velocity-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 4px;
+            padding: 12px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            font-family: var(--vscode-editor-font-family);
+            color: var(--vscode-foreground);
+            margin-bottom: 4px;
+        }
+
+        .stat-change {
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-change.positive {
+            color: var(--vscode-testing-iconPassed);
+        }
+
+        .stat-change.negative {
+            color: var(--vscode-testing-iconFailed);
+        }
+
+        .stat-change.neutral {
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .stat-sublabel {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .stat-rating {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        /* Consistency Gauge */
+        .consistency-gauge {
+            width: 100%;
+            height: 6px;
+            background: var(--vscode-input-background);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .consistency-gauge-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .consistency-gauge-fill.high {
+            background: var(--vscode-testing-iconPassed);
+        }
+
+        .consistency-gauge-fill.medium {
+            background: var(--vscode-charts-yellow);
+        }
+
+        .consistency-gauge-fill.low {
+            background: var(--vscode-testing-iconFailed);
+        }
+
+        .chart-section {
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+        }
+
+        .chart-section h3 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--vscode-foreground);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .metrics-grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 24px 0 12px 0;
+            color: var(--vscode-foreground);
+            opacity: 0.9;
+        }
+
+        .metric-card {
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 4px;
+            padding: 12px;
+        }
+
+        /* Pie Chart */
+        .pie-chart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+        }
+
+        .pie-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .pie-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .pie-legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .pie-legend-label {
+            color: var(--vscode-foreground);
+        }
+
+        .pie-legend-value {
+            margin-left: auto;
+            color: var(--vscode-descriptionForeground);
+            font-weight: 500;
+        }
+
+        .metric-card h4 {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--vscode-foreground);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: 600;
+            font-family: var(--vscode-editor-font-family);
+            color: var(--vscode-foreground);
+            margin-bottom: 8px;
+        }
+
+        .distribution {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .projection-section {
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 4px;
+            padding: 16px;
+        }
+
+        .projection-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--vscode-foreground);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--vscode-descriptionForeground);
+            cursor: help;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+            margin-left: 4px;
+        }
+
+        .info-icon:hover {
+            opacity: 1;
+            color: var(--vscode-foreground);
+        }
+
+        /* Analytics Disclaimer Banner */
+        .analytics-disclaimer {
+            background: var(--vscode-editorInfo-background);
+            border: 1px solid var(--vscode-editorInfo-border);
+            border-radius: 4px;
+            padding: 12px 0px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .analytics-disclaimer-icon {
+            flex-shrink: 0;
+            margin-top: 2px;
+            color: var(--vscode-editorInfo-foreground);
+        }
+
+        .analytics-disclaimer-content {
+            flex: 1;
+        }
+
+        .analytics-disclaimer-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--vscode-editorInfo-foreground);
+            margin-bottom: 4px;
+        }
+
+        .analytics-disclaimer-text {
+            font-size: 11px;
+            color: var(--vscode-foreground);
+            line-height: 1.5;
+        }
+
+        .projection-date {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--vscode-foreground);
+        }
+
+        .projection-details {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-top: 8px;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--vscode-input-background);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: rgb(59, 130, 246);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Bar Chart - Tasks Per Week */
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 8px;
+            height: 200px;
+            padding: 12px 0;
+            position: relative;
+        }
+
+        .bar-chart-bar {
+            flex: 1;
+            background: var(--vscode-progressBar-background);
+            opacity: 0.7;
+            border-radius: 2px 2px 0 0;
+            position: relative;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            min-height: 4px;
+        }
+
+        .bar-chart-bar:hover {
+            opacity: 1;
+        }
+
+        .bar-chart-bar.current-week {
+            opacity: 1;
+            background: var(--vscode-charts-yellow);
+        }
+
+        .bar-chart-bar .bar-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--vscode-editorHoverWidget-background);
+            border: 1px solid var(--vscode-editorHoverWidget-border);
+            color: var(--vscode-editorHoverWidget-foreground);
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 10;
+            margin-bottom: 4px;
+        }
+
+        .bar-chart-bar:hover .bar-tooltip {
+            opacity: 1;
+        }
+
+        .bar-chart-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: var(--vscode-descriptionForeground);
+            white-space: nowrap;
+        }
+
+        .bar-chart-average-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 1px dashed var(--vscode-charts-blue);
+            opacity: 0.5;
+        }
+
+        .bar-chart-average-label {
+            position: absolute;
+            right: 0;
+            top: -10px;
+            font-size: 10px;
+            color: var(--vscode-charts-blue);
+            background: var(--vscode-editor-background);
+            padding: 0 4px;
+        }
+
+        /* Mini Chart - Specs Per Week */
+        .chart-with-labels {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .mini-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 4px;
+            height: 80px;
+            padding: 8px 0;
+            position: relative;
+            border-left: 1px solid var(--vscode-panel-border);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding-left: 8px;
+        }
+
+        .mini-chart-bar {
+            flex: 1;
+            background: var(--vscode-progressBar-background);
+            opacity: 0.7;
+            border-radius: 2px 2px 0 0;
+            min-height: 2px;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            position: relative;
+        }
+
+        .mini-chart-bar:hover {
+            opacity: 1;
+        }
+
+        .mini-chart-bar:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--vscode-editorHoverWidget-background);
+            color: var(--vscode-editorHoverWidget-foreground);
+            border: 1px solid var(--vscode-editorHoverWidget-border);
+            padding: 6px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .chart-x-labels {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            padding: 4px 2px 0 10px;
+            font-weight: 500;
+        }
+
+        .chart-x-label {
+            flex: 1;
+            text-align: center;
+            opacity: 0.6;
+        }
+
+        .chart-x-label.highlight {
+            opacity: 1;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+        }
+
+        /* Horizontal Bars - Day of Week */
+        .horizontal-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 8px 0;
+        }
+
+        .horizontal-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .horizontal-bar-label {
+            font-size: 11px;
+            color: var(--vscode-foreground);
+            width: 60px;
+            text-align: right;
+            font-family: var(--vscode-editor-font-family);
+        }
+
+        .horizontal-bar-track {
+            flex: 1;
+            height: 22px;
+            background: var(--vscode-input-background);
+            overflow: hidden;
+            position: relative;
+            margin-top: 2px;
+        }
+
+        .horizontal-bar-fill {
+            height: 100%;
+            background: rgb(59, 130, 246);
+            transition: width 0.3s ease;
+        }
+
+        .horizontal-bar-value {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            width: 30px;
+            text-align: right;
+            font-family: var(--vscode-editor-font-family);
+        }
+
+        /* Stacked Bar - Required vs Optional */
+        .stacked-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 8px 0;
+        }
+
+        .stacked-bar-container {
+            height: 24px;
+            background: var(--vscode-input-background);
+            border-radius: 2px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .stacked-bar-segment {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--vscode-editor-background);
+            font-weight: 600;
+            transition: width 0.3s ease;
+            text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .stacked-bar-segment.required {
+            background: var(--vscode-charts-blue);
+        }
+
+        .stacked-bar-segment.optional {
+            background: var(--vscode-descriptionForeground);
+            opacity: 0.5;
+        }
+
+        .stacked-bar-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+        }
+
+        .stacked-bar-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stacked-bar-legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .stacked-bar-legend-color.required {
+            background: var(--vscode-charts-blue);
+        }
+
+        .stacked-bar-legend-color.optional {
+            background: var(--vscode-descriptionForeground);
+            opacity: 0.5;
+        }
+
+        /* Timeline Tab Styles */
+        .timeline-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Calendar Heatmap */
+        .calendar-heatmap {
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .heatmap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .heatmap-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+            margin-bottom: 12px;
+        }
+
+        .heatmap-cell {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 2px;
+            background: var(--vscode-input-background);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            position: relative;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .heatmap-cell.level-0 {
+            background: var(--vscode-input-background);
+        }
+
+        .heatmap-cell.level-1 {
+            background: var(--vscode-charts-blue);
+            opacity: 0.25;
+        }
+
+        .heatmap-cell.level-2 {
+            background: var(--vscode-charts-blue);
+            opacity: 0.5;
+        }
+
+        .heatmap-cell.level-3 {
+            background: var(--vscode-charts-blue);
+            opacity: 0.75;
+        }
+
+        .heatmap-cell.level-4 {
+            background: var(--vscode-charts-blue);
+            opacity: 1.0;
+        }
+
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            justify-content: flex-end;
+        }
+
+        .legend-scale {
+            display: flex;
+            gap: 3px;
+        }
+
+        .legend-cell {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .legend-cell.level-0 {
+            background: var(--vscode-input-background);
+        }
+
+        .legend-cell.level-1 {
+            background: var(--vscode-charts-blue);
+            opacity: 0.25;
+        }
+
+        .legend-cell.level-2 {
+            background: var(--vscode-charts-blue);
+            opacity: 0.5;
+        }
+
+        .legend-cell.level-3 {
+            background: var(--vscode-charts-blue);
+            opacity: 0.75;
+        }
+
+        .legend-cell.level-4 {
+            background: var(--vscode-charts-blue);
+            opacity: 1.0;
+        }
+
+        /* Activity Stream */
+        .activity-stream {
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stream-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .stream-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .stream-filter {
+            padding: 4px 8px;
+            background: var(--vscode-input-background);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 2px;
+            color: var(--vscode-input-foreground);
+            font-size: 11px;
+            font-family: var(--vscode-font-family);
+            outline: none;
+        }
+
+        .stream-filter:focus {
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .stream-content {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .stream-day {
+            margin-bottom: 20px;
+        }
+
+        .stream-day-header {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stream-event {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-bottom: 4px;
+            cursor: default;
+        }
+
+        .stream-event:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+
+        .stream-event-icon {
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .stream-event-time {
+            color: var(--vscode-descriptionForeground);
+            flex-shrink: 0;
+            width: 60px;
+        }
+
+        .stream-event-text {
+            flex: 1;
+            color: var(--vscode-foreground);
+        }
+
+        .stream-event-spec {
+            color: var(--vscode-textLink-foreground);
+            font-weight: 500;
+        }
+
+        .stream-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--vscode-descriptionForeground);
+            font-size: 11px;
+        }
+
+        /* Spec Timeline */
+        .spec-timeline {
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 4px;
+            padding: 16px;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .timeline-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .timeline-content-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .spec-timeline-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .timeline-spec-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .timeline-bar-container {
+            position: relative;
+            height: 24px;
+            background: var(--vscode-input-background);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .timeline-bar-fill {
+            height: 100%;
+            background: var(--vscode-charts-blue);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+        }
+
+        .timeline-bar-fill.completed {
+            background: var(--vscode-charts-green);
+        }
+
+        .timeline-progress {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--vscode-editor-background);
+            text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .timeline-dates {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: var(--vscode-descriptionForeground);
+            margin-top: 2px;
+        }
+
+        .timeline-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--vscode-descriptionForeground);
+            font-size: 11px;
+        }
+
+        /* Section Separator */
+        .section-separator {
+            height: 1px;
+            background-color: var(--vscode-textSeparator-foreground);
+            margin: 32px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="analytics-container">
+        <!-- Tab Navigation -->
+        <div class="analytics-tabs" role="tablist" aria-label="Analytics sections">
+            <button class="tab active" data-tab="velocity" role="tab" aria-selected="true" aria-controls="velocity-tab" tabindex="0">
+                <span class="codicon codicon-pulse"></span>
+                Velocity
+            </button>
+            <button class="tab" data-tab="timeline" role="tab" aria-selected="false" aria-controls="timeline-tab" tabindex="-1" style="display: none;">
+                <span class="codicon codicon-calendar"></span>
+                Timeline
+            </button>
+            <button class="tab" data-tab="forecasts" role="tab" aria-selected="false" aria-controls="forecasts-tab" tabindex="-1" style="display: none;">
+                <span class="codicon codicon-target"></span>
+                Forecasts
+            </button>
+            <button class="tab" data-tab="overview" role="tab" aria-selected="false" aria-controls="overview-tab" tabindex="-1" style="display: none;">
+                <span class="codicon codicon-dashboard"></span>
+                Overview
+            </button>
+            <div style="flex: 1;"></div>
+            <button class="tab" id="refresh-button" title="Refresh metrics" aria-label="Refresh metrics">
+                <span class="codicon codicon-refresh"></span>
+            </button>
+        </div>
+
+        <!-- Velocity Tab Content -->
+        <div class="tab-content active" id="velocity-tab" role="tabpanel" aria-labelledby="velocity-tab">
+            <div class="velocity-content">
+                <!-- Analytics Disclaimer -->
+                <div class="analytics-disclaimer">
+                    <span class="analytics-disclaimer-icon codicon codicon-info"></span>
+                    <div class="analytics-disclaimer-content">
+                        <div class="analytics-disclaimer-title">Building Your Analytics Profile</div>
+                        <div class="analytics-disclaimer-text">
+                            Your velocity metrics become more accurate and insightful as you complete tasks over time. 
+                            Initial data may appear limited, but after a few weeks of activity, you'll see meaningful trends, 
+                            patterns, and projections that help you understand your workflow and plan more effectively.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1. Specs Metrics: This Week | Average | Consistency -->
+                <h3 class="section-title">Specs Performance</h3>
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">This Week</div>
+                        <div class="stat-value" id="currentWeekSpecs">0</div>
+                        <div class="stat-sublabel">specs completed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Average</div>
+                        <div class="stat-value" id="averageSpecs">0</div>
+                        <div class="stat-sublabel">specs/week (4-week rolling)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Consistency</div>
+                        <div class="stat-value" id="specsConsistencyScore">0%</div>
+                        <div class="stat-rating" id="specsConsistencyRating">-</div>
+                        <div class="consistency-gauge">
+                            <div class="consistency-gauge-fill" id="specsConsistencyGauge" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Specs Completed Chart (Last 10 Weeks) -->
+                <div class="chart-section">
+                    <h3>Specs Completed (Last 10 Weeks)</h3>
+                    <div class="bar-chart" id="specs-chart">
+                        <!-- Bars will be generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Separator -->
+                <div class="section-separator"></div>
+
+                <!-- 3. Tasks Metrics: This Week | Average | Consistency -->
+                <h3 class="section-title">Tasks Performance</h3>
+                <div class="hero-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">This Week</div>
+                        <div class="stat-value" id="currentWeekTasks">0</div>
+                        <div class="stat-change neutral" id="velocityTrend">
+                            <span class="codicon codicon-arrow-right"></span>
+                            <span>0%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Average</div>
+                        <div class="stat-value" id="averageVelocity">0</div>
+                        <div class="stat-sublabel">tasks/week (4-week rolling)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Consistency</div>
+                        <div class="stat-value" id="consistencyScore">0%</div>
+                        <div class="stat-rating" id="consistencyRating">-</div>
+                        <div class="consistency-gauge">
+                            <div class="consistency-gauge-fill" id="consistencyGauge" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Tasks Completed Chart (Last 10 Weeks) -->
+                <div class="chart-section">
+                    <h3>Tasks Completed (Last 10 Weeks)</h3>
+                    <div class="bar-chart" id="tasks-chart">
+                        <!-- Bars will be generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Separator -->
+                <div class="section-separator"></div>
+
+                <!-- 5. Required vs Optional (Pie) | Day of Week | Avg Time to Complete -->
+                <div class="metrics-grid metrics-grid-3">
+                    <div class="metric-card">
+                        <h4>Required vs Optional</h4>
+                        <div class="pie-chart-container">
+                            <canvas id="required-optional-pie" width="120" height="120"></canvas>
+                            <div class="pie-legend" id="pie-legend"></div>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Day of Week</h4>
+                        <div class="horizontal-bars" id="day-chart">
+                            <!-- Bars will be generated dynamically -->
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Avg Time to Complete</h4>
+                        <div class="metric-value" id="avgTimeToComplete">0 days</div>
+                        <div class="distribution" id="timeDistribution">
+                            Fast: 0 | Medium: 0 | Slow: 0
+                        </div>
+                        <div style="font-size: 10px; color: var(--vscode-descriptionForeground); margin-top: 8px; line-height: 1.4;">
+                            Fast: ≤14 days | Medium: 15-42 days | Slow: ≥43 days
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Separator -->
+                <div class="section-separator"></div>
+
+                <!-- Projection -->
+                <div class="projection-section">
+                    <h3>
+                        🔮 Projected Completion
+                        <span class="info-icon codicon codicon-info" title="Based on your 4-week average velocity and remaining tasks. Formula: Today + (Remaining Tasks ÷ Avg Velocity × 7 days). Updates as you complete more tasks."></span>
+                    </h3>
+                    <div class="projection-content">
+                        <div class="projection-date" id="projectionDate">
+                            No projection available
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="projectionProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="projection-details" id="projectionDetails">
+                            -
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Tab Content -->
+        <div class="tab-content" id="timeline-tab">
+            <div class="timeline-content">
+                <!-- Calendar Heatmap -->
+                <div class="calendar-heatmap">
+                    <div class="heatmap-header">
+                        <h3>Activity (Last 12 weeks)</h3>
+                    </div>
+                    <div class="heatmap-grid" id="heatmap-grid">
+                        <!-- Generated dynamically -->
+                    </div>
+                    <div class="heatmap-legend">
+                        <span>Less</span>
+                        <div class="legend-scale">
+                            <div class="legend-cell level-0"></div>
+                            <div class="legend-cell level-1"></div>
+                            <div class="legend-cell level-2"></div>
+                            <div class="legend-cell level-3"></div>
+                            <div class="legend-cell level-4"></div>
+                        </div>
+                        <span>More</span>
+                    </div>
+                </div>
+
+                <!-- Activity Stream -->
+                <div class="activity-stream">
+                    <div class="stream-header">
+                        <h3>Recent Activity</h3>
+                        <input type="text" class="stream-filter" id="stream-filter" placeholder="Filter by spec...">
+                    </div>
+                    <div class="stream-content" id="stream-content">
+                        <!-- Generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Spec Timeline -->
+                <div class="spec-timeline">
+                    <div class="timeline-header">
+                        <h3>Spec Progress</h3>
+                    </div>
+                    <div class="timeline-content-inner" id="timeline-content">
+                        <!-- Generated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forecasts Tab Content (Placeholder) -->
+        <div class="tab-content" id="forecasts-tab">
+            <div class="placeholder">
+                <h2>Forecasts</h2>
+                <p>Coming soon: Predictive analytics and completion forecasts</p>
+            </div>
+        </div>
+
+        <!-- Overview Tab Content (Placeholder) -->
+        <div class="tab-content" id="overview-tab">
+            <div class="placeholder">
+                <h2>Overview Dashboard</h2>
+                <p>Coming soon: High-level summary of all metrics</p>
+            </div>
+        </div>
+    </div>
+
+    <script nonce="{{nonce}}">
+        const vscode = acquireVsCodeApi();
+        
+        // Tab switching logic
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.getAttribute('data-tab');
+                
+                // Skip if this is the refresh button
+                if (tab.id === 'refresh-button') {
+                    handleRefresh();
+                    return;
+                }
+                
+                // Skip if no tab name (e.g., refresh button)
+                if (!tabName) {
+                    return;
+                }
+                
+                switchToTab(tabName);
+            });
+        });
+        
+        /**
+         * Switch to a specific tab
+         * 
+         * @param tabName The name of the tab to switch to
+         * 
+         * Updates:
+         * - Active class on tabs
+         * - ARIA attributes (aria-selected, tabindex)
+         * - Active content visibility
+         * - Notifies extension of tab change
+         * 
+         * Requirements: 20.11, 22.6, 22.7
+         */
+        function switchToTab(tabName) {
+            // Update active tab
+            tabs.forEach(t => {
+                const isActive = t.getAttribute('data-tab') === tabName;
+                t.classList.toggle('active', isActive);
+                
+                // Update ARIA attributes
+                if (t.getAttribute('role') === 'tab') {
+                    t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                    t.setAttribute('tabindex', isActive ? '0' : '-1');
+                }
+            });
+            
+            // Update active content
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            const targetContent = document.getElementById(tabName + '-tab');
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            
+            // Notify extension of tab switch
+            vscode.postMessage({
+                type: 'switchTab',
+                tab: tabName
+            });
+        }
+        
+        /**
+         * Keyboard navigation support
+         * 
+         * Supports:
+         * - Arrow keys to navigate between tabs
+         * - Enter/Space to activate tab
+         * - Escape to focus out of tabs
+         * 
+         * Requirements: 20.11, 22.6, 22.7
+         */
+        document.addEventListener('keydown', (event) => {
+            const activeElement = document.activeElement;
+            
+            // Check if a tab is focused
+            if (!activeElement || !activeElement.classList.contains('tab')) {
+                return;
+            }
+            
+            const tabsArray = Array.from(tabs).filter(t => t.getAttribute('data-tab')); // Exclude refresh button
+            const currentIndex = tabsArray.indexOf(activeElement);
+            
+            if (currentIndex === -1) {
+                return;
+            }
+            
+            switch (event.key) {
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    // Move to previous tab
+                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : tabsArray.length - 1;
+                    tabsArray[prevIndex].focus();
+                    break;
+                    
+                case 'ArrowRight':
+                    event.preventDefault();
+                    // Move to next tab
+                    const nextIndex = currentIndex < tabsArray.length - 1 ? currentIndex + 1 : 0;
+                    tabsArray[nextIndex].focus();
+                    break;
+                    
+                case 'Home':
+                    event.preventDefault();
+                    // Move to first tab
+                    tabsArray[0].focus();
+                    break;
+                    
+                case 'End':
+                    event.preventDefault();
+                    // Move to last tab
+                    tabsArray[tabsArray.length - 1].focus();
+                    break;
+                    
+                case 'Enter':
+                case ' ':
+                    event.preventDefault();
+                    // Activate the focused tab
+                    const tabName = activeElement.getAttribute('data-tab');
+                    if (tabName) {
+                        switchToTab(tabName);
+                    }
+                    break;
+                    
+                case 'Escape':
+                    event.preventDefault();
+                    // Blur the tab
+                    activeElement.blur();
+                    break;
+            }
+        });
+        
+        /**
+         * Handle refresh button click
+         * 
+         * Sends refreshMetrics command to extension host to recalculate
+         * and send updated metrics
+         * 
+         * Requirements: 22.9
+         */
+        function handleRefresh() {
+            console.log('Refresh button clicked');
+            
+            // Send refresh command to extension
+            vscode.postMessage({
+                type: 'refreshMetrics'
+            });
+            
+            // Visual feedback: briefly disable button
+            const refreshButton = document.getElementById('refresh-button');
+            if (refreshButton) {
+                refreshButton.disabled = true;
+                setTimeout(() => {
+                    refreshButton.disabled = false;
+                }, 1000);
+            }
+        }
+        
+        // Listen for messages from extension
+        window.addEventListener('message', event => {
+            const message = event.data;
+            
+            switch (message.type) {
+                case 'metricsUpdated':
+                    console.log('Received metrics:', message.metrics);
+                    updateMetrics(message.metrics);
+                    break;
+                    
+                case 'dataRefreshed':
+                    console.log('Data refreshed notification received');
+                    // Metrics will be updated via metricsUpdated message
+                    break;
+                    
+                case 'restoreTab':
+                    console.log('Restoring tab:', message.tab);
+                    restoreActiveTab(message.tab);
+                    break;
+                    
+                case 'error':
+                    console.error('Error from extension:', message.message);
+                    showError(message.message);
+                    break;
+            }
+        });
+        
+        /**
+         * Show error message in the UI
+         */
+        function showError(message) {
+            // For now, just log to console
+            // Future: Show error banner in UI
+            console.error('Analytics error:', message);
+        }
+        
+        /**
+         * Restore the active tab from saved state
+         * 
+         * Activates the specified tab by:
+         * - Removing active class from all tabs
+         * - Adding active class to the specified tab
+         * - Updating ARIA attributes
+         * - Showing the corresponding tab content
+         * 
+         * Requirements: 23.1, 23.2
+         */
+        function restoreActiveTab(tabName) {
+            console.log('Restoring active tab:', tabName);
+            
+            // Default to velocity if tab name is invalid
+            if (!tabName || !document.getElementById(tabName + '-tab')) {
+                tabName = 'velocity';
+            }
+            
+            // Use switchToTab to handle all updates
+            switchToTab(tabName);
+        }
+        
+        // Update metrics in the UI
+        function updateMetrics(metrics) {
+            if (!metrics) {
+                return;
+            }
+            
+            // Update specs metrics
+            if (metrics.currentWeekSpecs !== undefined) {
+                document.getElementById('currentWeekSpecs').textContent = metrics.currentWeekSpecs;
+            }
+            
+            if (metrics.averageSpecs !== undefined) {
+                document.getElementById('averageSpecs').textContent = 
+                    metrics.averageSpecs.toFixed(1);
+            }
+            
+            if (metrics.specsConsistencyScore !== undefined) {
+                document.getElementById('specsConsistencyScore').textContent = 
+                    metrics.specsConsistencyScore + '%';
+                
+                // Update specs gauge
+                const specsGauge = document.getElementById('specsConsistencyGauge');
+                specsGauge.style.width = metrics.specsConsistencyScore + '%';
+                
+                // Set gauge color based on rating
+                specsGauge.className = 'consistency-gauge-fill';
+                if (metrics.specsConsistencyScore >= 70) {
+                    specsGauge.classList.add('high');
+                } else if (metrics.specsConsistencyScore >= 40) {
+                    specsGauge.classList.add('medium');
+                } else {
+                    specsGauge.classList.add('low');
+                }
+            }
+            
+            if (metrics.specsConsistencyRating) {
+                document.getElementById('specsConsistencyRating').textContent = metrics.specsConsistencyRating;
+            }
+            
+            // Update tasks metrics
+            if (metrics.currentWeekTasks !== undefined) {
+                document.getElementById('currentWeekTasks').textContent = metrics.currentWeekTasks;
+            }
+            
+            if (metrics.averageVelocity !== undefined) {
+                document.getElementById('averageVelocity').textContent = 
+                    metrics.averageVelocity.toFixed(1);
+            }
+            
+            if (metrics.consistencyScore !== undefined) {
+                document.getElementById('consistencyScore').textContent = 
+                    metrics.consistencyScore + '%';
+                
+                // Update gauge
+                const gauge = document.getElementById('consistencyGauge');
+                gauge.style.width = metrics.consistencyScore + '%';
+                
+                // Set gauge color based on rating
+                gauge.className = 'consistency-gauge-fill';
+                if (metrics.consistencyScore >= 70) {
+                    gauge.classList.add('high');
+                } else if (metrics.consistencyScore >= 40) {
+                    gauge.classList.add('medium');
+                } else {
+                    gauge.classList.add('low');
+                }
+            }
+            
+            if (metrics.consistencyRating) {
+                document.getElementById('consistencyRating').textContent = metrics.consistencyRating;
+            }
+            
+            // Update velocity trend
+            if (metrics.velocityTrend !== undefined) {
+                const trendElement = document.getElementById('velocityTrend');
+                const trendValue = Math.abs(metrics.velocityTrend).toFixed(0);
+                
+                if (metrics.velocityTrend > 0) {
+                    trendElement.className = 'stat-change positive';
+                    trendElement.innerHTML = `
+                        <span class="codicon codicon-arrow-up"></span>
+                        <span>+${trendValue}%</span>
+                    `;
+                } else if (metrics.velocityTrend < 0) {
+                    trendElement.className = 'stat-change negative';
+                    trendElement.innerHTML = `
+                        <span class="codicon codicon-arrow-down"></span>
+                        <span>-${trendValue}%</span>
+                    `;
+                } else {
+                    trendElement.className = 'stat-change neutral';
+                    trendElement.innerHTML = `
+                        <span class="codicon codicon-arrow-right"></span>
+                        <span>0%</span>
+                    `;
+                }
+            }
+            
+            // Update average time to complete
+            if (metrics.averageTimeToComplete !== undefined) {
+                document.getElementById('avgTimeToComplete').textContent = 
+                    metrics.averageTimeToComplete + ' days';
+            }
+            
+            // Update time distribution
+            if (metrics.timeDistribution) {
+                document.getElementById('timeDistribution').textContent = 
+                    `Fast: ${metrics.timeDistribution.fast} | Medium: ${metrics.timeDistribution.medium} | Slow: ${metrics.timeDistribution.slow}`;
+            }
+            
+            // Update projection
+            if (metrics.projectedCompletionDate) {
+                const date = new Date(metrics.projectedCompletionDate);
+                const dateStr = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                
+                const weeksRemaining = Math.ceil(metrics.daysRemaining / 7);
+                document.getElementById('projectionDate').textContent = 
+                    `${dateStr} (${weeksRemaining} weeks remaining)`;
+                
+                // Calculate progress percentage
+                const totalTasks = metrics.remainingTasks + (metrics.currentWeekTasks || 0);
+                const progress = totalTasks > 0 
+                    ? ((totalTasks - metrics.remainingTasks) / totalTasks * 100).toFixed(0)
+                    : 0;
+                
+                document.getElementById('projectionProgress').style.width = progress + '%';
+                document.getElementById('projectionDetails').textContent = 
+                    `${progress}% complete`;
+            } else {
+                document.getElementById('projectionDate').textContent = 
+                    'No projection available';
+                document.getElementById('projectionProgress').style.width = '0%';
+                document.getElementById('projectionDetails').textContent = 
+                    'Complete more tasks to generate a projection';
+            }
+            
+            // Render charts
+            renderTasksChart(metrics);
+            renderSpecsChart(metrics);
+            renderPieChart(metrics);
+            renderDayOfWeekChart(metrics);
+            
+            // Render timeline components
+            if (metrics.dailyActivity) {
+                renderCalendarHeatmap(metrics.dailyActivity);
+            }
+            if (metrics.recentEvents) {
+                renderActivityStream(metrics.recentEvents);
+            }
+            if (metrics.specTimelines) {
+                renderSpecTimeline(metrics.specTimelines);
+            }
+        }
+        
+        /**
+         * Render tasks per week bar chart (Last 10 Weeks)
+         * Requirements: 20.1, 20.11, 20.12
+         */
+        function renderTasksChart(metrics) {
+            const container = document.getElementById('tasks-chart');
+            if (!container || !metrics.tasksPerWeek) {
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            // Show only last 10 weeks
+            const allData = metrics.tasksPerWeek;
+            const data = allData.slice(-10);
+            const maxValue = Math.max(...data, 1);
+            const currentWeekIndex = data.length - 1;
+            
+            // Create bars
+            data.forEach((value, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'bar-chart-bar';
+                
+                // Highlight current week
+                if (index === currentWeekIndex) {
+                    bar.classList.add('current-week');
+                }
+                
+                // Calculate height as percentage
+                const heightPercent = (value / maxValue) * 100;
+                bar.style.height = heightPercent + '%';
+                
+                // Add tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'bar-tooltip';
+                const weekLabel = index === currentWeekIndex ? 'This week' : `${data.length - index} weeks ago`;
+                tooltip.textContent = `${weekLabel}: ${value} tasks`;
+                bar.appendChild(tooltip);
+                
+                // Add label
+                const label = document.createElement('div');
+                label.className = 'bar-chart-label';
+                label.textContent = `W${index + 1}`;
+                bar.appendChild(label);
+                
+                container.appendChild(bar);
+            });
+            
+            // Add average line if we have data
+            if (metrics.averageVelocity && metrics.averageVelocity > 0) {
+                const avgLine = document.createElement('div');
+                avgLine.className = 'bar-chart-average-line';
+                const avgPercent = (metrics.averageVelocity / maxValue) * 100;
+                avgLine.style.bottom = avgPercent + '%';
+                
+                const avgLabel = document.createElement('div');
+                avgLabel.className = 'bar-chart-average-label';
+                avgLabel.textContent = `Avg: ${metrics.averageVelocity.toFixed(1)}`;
+                avgLine.appendChild(avgLabel);
+                
+                container.appendChild(avgLine);
+            }
+        }
+        
+        /**
+         * Render specs completed bar chart (Last 10 Weeks)
+         * Requirements: 20.5, 20.12
+         */
+        function renderSpecsChart(metrics) {
+            const container = document.getElementById('specs-chart');
+            if (!container || !metrics.specsPerWeek) {
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            // Show only last 10 weeks
+            const allData = metrics.specsPerWeek;
+            const data = allData.slice(-10);
+            const maxValue = Math.max(...data, 1);
+            const currentWeekIndex = data.length - 1;
+            
+            // Create bars
+            data.forEach((value, index) => {
+                const bar = document.createElement('div');
+                bar.className = 'bar-chart-bar';
+                
+                // Highlight current week
+                if (index === currentWeekIndex) {
+                    bar.classList.add('current-week');
+                }
+                
+                // Calculate height as percentage
+                const heightPercent = (value / maxValue) * 100;
+                bar.style.height = heightPercent + '%';
+                
+                // Add tooltip
+                const tooltip = document.createElement('div');
+                tooltip.className = 'bar-tooltip';
+                const weekLabel = index === currentWeekIndex ? 'This week' : `${data.length - index} weeks ago`;
+                tooltip.textContent = `${weekLabel}: ${value} spec${value !== 1 ? 's' : ''}`;
+                bar.appendChild(tooltip);
+                
+                // Add label
+                const label = document.createElement('div');
+                label.className = 'bar-chart-label';
+                label.textContent = `W${index + 1}`;
+                bar.appendChild(label);
+                
+                container.appendChild(bar);
+            });
+            
+            // Add average line if we have specs average
+            if (metrics.averageSpecs && metrics.averageSpecs > 0) {
+                const avgLine = document.createElement('div');
+                avgLine.className = 'bar-chart-average-line';
+                const avgPercent = (metrics.averageSpecs / maxValue) * 100;
+                avgLine.style.bottom = avgPercent + '%';
+                
+                const avgLabel = document.createElement('div');
+                avgLabel.className = 'bar-chart-average-label';
+                avgLabel.textContent = `Avg: ${metrics.averageSpecs.toFixed(1)}`;
+                avgLine.appendChild(avgLabel);
+                
+                container.appendChild(avgLine);
+            }
+        }
+        
+        /**
+         * Render pie chart for Required vs Optional tasks
+         */
+        function renderPieChart(metrics) {
+            const canvas = document.getElementById('required-optional-pie');
+            const legendContainer = document.getElementById('pie-legend');
+            
+            if (!canvas || !legendContainer || !metrics.requiredVsOptional) {
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            const data = metrics.requiredVsOptional;
+            const total = data.required + data.optional;
+            
+            if (total === 0) {
+                // No data - show empty state
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                legendContainer.innerHTML = '<div style="text-align: center; color: var(--vscode-descriptionForeground); padding: 20px;">No data yet</div>';
+                return;
+            }
+            
+            // Calculate percentages
+            const requiredPercent = (data.required / total) * 100;
+            const optionalPercent = (data.optional / total) * 100;
+            
+            // Colors - Better contrast
+            const requiredColor = 'rgb(34, 197, 94)'; // Green for required
+            const optionalColor = 'rgb(59, 130, 246)'; // Blue for optional
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw pie chart
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(centerX, centerY) - 5;
+            
+            let currentAngle = -Math.PI / 2; // Start at top
+            
+            // Draw required slice
+            if (data.required > 0) {
+                const requiredAngle = (data.required / total) * 2 * Math.PI;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + requiredAngle);
+                ctx.closePath();
+                ctx.fillStyle = requiredColor;
+                ctx.fill();
+                currentAngle += requiredAngle;
+            }
+            
+            // Draw optional slice
+            if (data.optional > 0) {
+                const optionalAngle = (data.optional / total) * 2 * Math.PI;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + optionalAngle);
+                ctx.closePath();
+                ctx.fillStyle = optionalColor;
+                ctx.fill();
+            }
+            
+            // Update legend
+            legendContainer.innerHTML = `
+                <div class="pie-legend-item">
+                    <div class="pie-legend-color" style="background: ${requiredColor}"></div>
+                    <div class="pie-legend-label">Required ${data.required} (${requiredPercent.toFixed(0)}%)</div>
+                </div>
+                <div class="pie-legend-item">
+                    <div class="pie-legend-color" style="background: ${optionalColor}"></div>
+                    <div class="pie-legend-label">Optional ${data.optional} (${optionalPercent.toFixed(0)}%)</div>
+                </div>
+            `;
+        }
+        
+        /**
+         * Render day of week horizontal bars
+         * Requirements: 20.8, 20.12
+         */
+        function renderDayOfWeekChart(metrics) {
+            const container = document.getElementById('day-chart');
+            if (!container || !metrics.dayOfWeekVelocity) {
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const data = days.map(day => metrics.dayOfWeekVelocity[day] || 0);
+            const maxValue = Math.max(...data, 1);
+            
+            days.forEach((day, index) => {
+                const value = data[index];
+                
+                const row = document.createElement('div');
+                row.className = 'horizontal-bar-row';
+                
+                const label = document.createElement('div');
+                label.className = 'horizontal-bar-label';
+                label.textContent = dayLabels[index];
+                
+                const track = document.createElement('div');
+                track.className = 'horizontal-bar-track';
+                
+                const fill = document.createElement('div');
+                fill.className = 'horizontal-bar-fill';
+                const widthPercent = (value / maxValue) * 100;
+                fill.style.width = widthPercent + '%';
+                
+                const valueLabel = document.createElement('div');
+                valueLabel.className = 'horizontal-bar-value';
+                valueLabel.textContent = value.toString();
+                
+                track.appendChild(fill);
+                row.appendChild(label);
+                row.appendChild(track);
+                row.appendChild(valueLabel);
+                container.appendChild(row);
+            });
+        }
+        
+        /**
+         * Render required vs optional stacked bar
+        /**
+         * Render calendar heatmap
+         * Requirements: Timeline Feature - Calendar Heatmap
+         */
+        function renderCalendarHeatmap(dailyActivity) {
+            const container = document.getElementById('heatmap-grid');
+            if (!container || !dailyActivity) {
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            // Get last 84 days (12 weeks)
+            const days = dailyActivity.slice(-84);
+            
+            if (days.length === 0) {
+                container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--vscode-descriptionForeground); font-size: 11px; padding: 20px;">No activity data available</div>';
+                return;
+            }
+            
+            // Calculate max for scaling
+            const max = Math.max(...days.map(d => d.completed), 1);
+            
+            days.forEach(day => {
+                const cell = document.createElement('div');
+                cell.className = 'heatmap-cell';
+                
+                // Calculate level (0-4)
+                const level = day.completed === 0 ? 0 : 
+                             Math.min(4, Math.ceil((day.completed / max) * 4));
+                cell.classList.add(`level-${level}`);
+                
+                // Tooltip
+                const date = new Date(day.date);
+                const dateStr = date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                cell.title = `${dateStr}: ${day.completed} task${day.completed !== 1 ? 's' : ''}`;
+                
+                container.appendChild(cell);
+            });
+        }
+
+        /**
+         * Render activity stream
+         * Requirements: Timeline Feature - Activity Stream
+         */
+        function renderActivityStream(events) {
+            const container = document.getElementById('stream-content');
+            if (!container) {
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            if (!events || events.length === 0) {
+                container.innerHTML = '<div class="stream-empty">No recent activity</div>';
+                return;
+            }
+            
+            // Group by day
+            const byDay = {};
+            events.forEach(event => {
+                const date = new Date(event.timestamp);
+                const dateKey = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                if (!byDay[dateKey]) {
+                    byDay[dateKey] = [];
+                }
+                byDay[dateKey].push(event);
+            });
+            
+            // Render each day
+            Object.entries(byDay).forEach(([date, dayEvents]) => {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'stream-day';
+                
+                // Day header
+                const header = document.createElement('div');
+                header.className = 'stream-day-header';
+                header.innerHTML = `📅 ${date}`;
+                dayDiv.appendChild(header);
+                
+                // Events
+                dayEvents.forEach(event => {
+                    const eventDiv = document.createElement('div');
+                    eventDiv.className = 'stream-event';
+                    
+                    const icon = '✓';
+                    const time = new Date(event.timestamp).toLocaleTimeString('en-US', { 
+                        hour: 'numeric', 
+                        minute: '2-digit' 
+                    });
+                    
+                    const description = event.taskDescription || 'Task completed';
+                    const truncated = description.length > 50 
+                        ? description.substring(0, 50) + '...' 
+                        : description;
+                    
+                    eventDiv.innerHTML = `
+                        <span class="stream-event-icon">${icon}</span>
+                        <span class="stream-event-time">${time}</span>
+                        <span class="stream-event-text">
+                            Completed task in <span class="stream-event-spec">${event.specName}</span>
+                            ${truncated ? ': ' + truncated : ''}
+                        </span>
+                    `;
+                    
+                    dayDiv.appendChild(eventDiv);
+                });
+                
+                container.appendChild(dayDiv);
+            });
+        }
+
+        /**
+         * Render spec timeline
+         * Requirements: Timeline Feature - Spec Timeline
+         */
+        function renderSpecTimeline(specTimelines) {
+            const container = document.getElementById('timeline-content');
+            if (!container) {
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            if (!specTimelines || specTimelines.length === 0) {
+                container.innerHTML = '<div class="timeline-empty">No specs to display</div>';
+                return;
+            }
+            
+            // Filter out specs with no activity
+            const activeSpecs = specTimelines.filter(spec => 
+                spec.startDate || spec.totalTasks > 0
+            );
+            
+            if (activeSpecs.length === 0) {
+                container.innerHTML = '<div class="timeline-empty">No active specs</div>';
+                return;
+            }
+            
+            activeSpecs.forEach(spec => {
+                const row = document.createElement('div');
+                row.className = 'spec-timeline-row';
+                
+                // Spec name
+                const name = document.createElement('div');
+                name.className = 'timeline-spec-name';
+                name.textContent = spec.specName;
+                row.appendChild(name);
+                
+                // Progress bar
+                const barContainer = document.createElement('div');
+                barContainer.className = 'timeline-bar-container';
+                
+                const barFill = document.createElement('div');
+                barFill.className = 'timeline-bar-fill';
+                if (spec.progress === 100) {
+                    barFill.classList.add('completed');
+                }
+                barFill.style.width = spec.progress + '%';
+                
+                const progressText = document.createElement('span');
+                progressText.className = 'timeline-progress';
+                progressText.textContent = spec.progress + '%';
+                
+                barFill.appendChild(progressText);
+                barContainer.appendChild(barFill);
+                row.appendChild(barContainer);
+                
+                // Dates
+                const dates = document.createElement('div');
+                dates.className = 'timeline-dates';
+                
+                const startStr = spec.startDate 
+                    ? new Date(spec.startDate).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                    })
+                    : 'Not started';
+                
+                const endStr = spec.endDate 
+                    ? new Date(spec.endDate).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                    }) + ' ✓'
+                    : 'In progress';
+                
+                dates.innerHTML = `
+                    <span>${startStr}</span>
+                    <span>${endStr}</span>
+                `;
+                row.appendChild(dates);
+                
+                container.appendChild(row);
+            });
+        }
+
+        /**
+         * Filter activity stream by spec name
+         */
+        function filterActivityStream() {
+            const filterInput = document.getElementById('stream-filter');
+            const streamEvents = document.querySelectorAll('.stream-event');
+            const streamDays = document.querySelectorAll('.stream-day');
+            
+            if (!filterInput) {
+                return;
+            }
+            
+            const filterText = filterInput.value.toLowerCase().trim();
+            
+            if (!filterText) {
+                // Show all
+                streamEvents.forEach(event => event.style.display = 'flex');
+                streamDays.forEach(day => day.style.display = 'block');
+                return;
+            }
+            
+            // Filter events
+            streamDays.forEach(day => {
+                const events = day.querySelectorAll('.stream-event');
+                let visibleCount = 0;
+                
+                events.forEach(event => {
+                    const text = event.textContent.toLowerCase();
+                    if (text.includes(filterText)) {
+                        event.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        event.style.display = 'none';
+                    }
+                });
+                
+                // Hide day if no visible events
+                day.style.display = visibleCount > 0 ? 'block' : 'none';
+            });
+        }
+
+        // Add filter event listener
+        document.addEventListener('DOMContentLoaded', () => {
+            const filterInput = document.getElementById('stream-filter');
+            if (filterInput) {
+                filterInput.addEventListener('input', filterActivityStream);
+            }
+        });
+    </script>
+</body>
+</html>

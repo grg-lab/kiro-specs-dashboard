@@ -57,6 +57,11 @@
         "command": "specs-dashboard.openFile",
         "title": "Open Spec File",
         "category": "Kiro"
+      },
+      {
+        "command": "specs-dashboard.generateMockData",
+        "title": "Generate Mock Velocity Data",
+        "category": "Kiro"
       }
     ],
     "viewsContainers": {

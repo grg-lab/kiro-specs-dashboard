@@ -5,6 +5,43 @@ All notable changes to the "Kiro Specs Dashboard" extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-02-05
+
+### Added
+
+- **Metrics Panel**: Comprehensive analytics dashboard accessible via "Metrics" button
+- **Velocity Tab**: Performance tracking with weekly trends and consistency scoring
+  - Specs Performance: Current week, average, and consistency metrics with 10-week completion chart
+  - Tasks Performance: Current week, average, and consistency metrics with 10-week completion chart
+  - Required vs Optional: Pie chart showing task distribution
+  - Day of Week: Horizontal bar chart showing completion patterns by weekday
+  - Average Time to Complete: Spec completion timeline with Fast/Medium/Slow breakdown
+  - Projected Completion: Estimated completion date with progress bar
+- **Mock Data Generator**: Realistic test data generation for development and testing
+- **Responsive Layout**: Stats header adapts to viewport width with flexible button positioning
+
+### Changed
+
+- Renamed "Analytics" button to "Metrics" for clarity
+- Improved pie chart visualization by removing dividing line
+- Enhanced chart styling with solid colors and consistent blue theme
+- Updated section separators for better visual hierarchy
+- Optimized stats header layout for better space utilization
+
+### Fixed
+
+- Progress bar visibility in Velocity tab
+- Section separator contrast in dark themes
+- Pie chart border rendering issues
+- Day of Week chart bar spacing and alignment
+
+### Technical
+
+- Added `VelocityCalculator` for metrics computation
+- Extended `VelocityMetrics` interface with specs tracking
+- Implemented weekly aggregation and consistency scoring algorithms
+- Added time-to-complete categorization (Fast: ≤14 days, Medium: 15-42 days, Slow: ≥43 days)
+
 ## [0.1.0] - 2026-01-31
 
 ### Added
@@ -91,4 +128,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **0.1.1** (2026-02-05) - Added Metrics panel with velocity tracking and analytics
 - **0.1.0** (2026-01-31) - Initial release with core functionality
