@@ -41,8 +41,8 @@
       "description": "Execute only required tasks to complete the minimum viable product",
       "promptTemplate": "Execute the spec \"{{specName}}\" located at {{specPath}}.\n\nFocus on required tasks only (skip optional tasks marked with *).\n\nWorkspace: {{workspaceFolder}}\nTotal tasks: {{totalTasks}}\nCompleted: {{completedTasks}}\nRemaining: {{remainingTasks}}\n\nPlease execute all remaining required tasks in order.",
       "isBuiltIn": true,
-      "createdAt": "2026-02-07T02:33:52.143Z",
-      "updatedAt": "2026-02-07T02:33:52.143Z"
+      "createdAt": "2026-02-07T02:50:12.447Z",
+      "updatedAt": "2026-02-07T02:50:12.447Z"
     },
     {
       "id": "full",
@@ -51,8 +51,8 @@
       "description": "Execute all tasks including optional ones for complete implementation",
       "promptTemplate": "Execute the spec \"{{specName}}\" located at {{specPath}}.\n\nExecute ALL tasks including optional ones.\n\nWorkspace: {{workspaceFolder}}\nTotal tasks: {{totalTasks}}\nCompleted: {{completedTasks}}\nRemaining: {{remainingTasks}}\n\nPlease execute all remaining tasks in order, including optional tasks.",
       "isBuiltIn": true,
-      "createdAt": "2026-02-07T02:33:52.143Z",
-      "updatedAt": "2026-02-07T02:33:52.143Z"
+      "createdAt": "2026-02-07T02:50:12.447Z",
+      "updatedAt": "2026-02-07T02:50:12.447Z"
     }
   ]
 }

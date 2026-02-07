@@ -2254,71 +2254,23 @@
             // Show relative path from workspace root
             const relativePath = `.kiro/specs/${spec.name}`;
 
-            // Get execution state for this spec
-            const executionState = executionStates[spec.name] || null;
-            
-            // Build execution controls HTML
-            let executionControlsHTML = '';
-            if (executionState && executionState.status === 'running') {
-                // Show running status with progress and cancel button
-                const execProgress = `${executionState.completedTasks || 0}/${executionState.totalTasks || totalTasks}`;
-                executionControlsHTML = `
-                    <div class="execution-controls">
-                        <span class="execution-status running">
-                            <span class="codicon codicon-sync codicon-modifier-spin"></span>
-                            Running...
-                        </span>
-                        <span class="execution-progress">${escapeHtml(execProgress)} tasks</span>
-                        <button class="cancel-btn" data-spec-id="${escapeHtml(spec.name)}" data-execution-id="${escapeHtml(executionState.executionId)}" title="Cancel execution">
-                            <span class="codicon codicon-close"></span> Cancel
+            // Show workspace folder in brackets for multi-root workspaces
+            const workspaceFolderDisplay = spec.workspaceFolder 
+                ? `<span class="workspace-folder">[${escapeHtml(spec.workspaceFolder)}]</span>`
+                : '';
+
+            // Always show execution button with profile dropdown (no status display)
+            const executionControlsHTML = `
+                <div class="execution-controls">
+                    <div class="execution-btn-wrapper">
+                        <button class="execution-btn" data-spec-id="${escapeHtml(spec.name)}" title="Execute spec with profile">
+                            <span class="codicon codicon-play"></span>
+                            Execute
+                            <span class="codicon codicon-chevron-down"></span>
                         </button>
                     </div>
-                `;
-            } else if (executionState && executionState.status === 'completed') {
-                // Show completed status
-                executionControlsHTML = `
-                    <div class="execution-controls">
-                        <span class="execution-status completed">
-                            <span class="codicon codicon-check"></span>
-                            Completed
-                        </span>
-                    </div>
-                `;
-            } else if (executionState && executionState.status === 'failed') {
-                // Show failed status with error
-                const errorMsg = executionState.error ? `: ${executionState.error}` : '';
-                executionControlsHTML = `
-                    <div class="execution-controls">
-                        <span class="execution-status failed" title="${escapeHtml(errorMsg)}">
-                            <span class="codicon codicon-error"></span>
-                            Failed${escapeHtml(errorMsg)}
-                        </span>
-                    </div>
-                `;
-            } else if (executionState && executionState.status === 'cancelled') {
-                // Show cancelled status
-                executionControlsHTML = `
-                    <div class="execution-controls">
-                        <span class="execution-status cancelled">
-                            <span class="codicon codicon-circle-slash"></span>
-                            Cancelled
-                        </span>
-                    </div>
-                `;
-            } else {
-                // Show execution button with profile dropdown
-                executionControlsHTML = `
-                    <div class="execution-controls">
-                        <div class="execution-btn-wrapper">
-                            <button class="execution-btn" data-spec-id="${escapeHtml(spec.name)}" title="Execute spec with profile">
-                                <span class="codicon codicon-play"></span>
-                                Execute
-                                <span class="codicon codicon-chevron-down"></span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
+                </div>
+            `;
 
             return `
                 <li class="spec-item">
@@ -2326,7 +2278,7 @@
                         <div class="spec-name">${escapeHtml(displayName)}</div>
                         ${statusBadge}
                     </div>
-                    <div class="spec-path">${workspaceFolderIndicator}${escapeHtml(relativePath)}</div>
+                    <div class="spec-path">${workspaceFolderDisplay}</div>
                     <div class="spec-progress-bar">
                         <div class="spec-progress-fill" style="width: ${progress}%"></div>
                     </div>
