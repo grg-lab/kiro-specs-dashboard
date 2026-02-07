@@ -264,16 +264,41 @@
         }
 
         .spec-progress-bar {
-            height: 2px;
-            background: var(--vscode-editorWidget-background);
+            height: 8px;
+            background: rgba(128, 128, 128, 0.2);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 5px;
+            margin-top: 8px;
             margin-bottom: 6px;
             overflow: hidden;
+            position: relative;
+            display: flex;
         }
 
         .spec-progress-fill {
             height: 100%;
             background: var(--vscode-progressBar-background);
             transition: width 0.2s;
+            position: relative;
+            z-index: 1;
+            border-radius: 5px;
+        }
+        
+        .spec-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 3px,
+                rgba(128, 128, 128, 0.15) 3px,
+                rgba(128, 128, 128, 0.15) 6px
+            );
+            pointer-events: none;
         }
 
         .spec-stats {
@@ -294,7 +319,7 @@
         .spec-actions {
             display: flex;
             gap: 4px;
-            margin-top: 6px;
+            margin-top: 12px;
         }
 
         .action-btn {
@@ -371,7 +396,8 @@
             background: var(--vscode-dropdown-background);
             border: 1px solid var(--vscode-dropdown-border);
             border-radius: 2px;
-            min-width: 200px;
+            min-width: 250px;
+            max-width: 300px;
             max-height: 300px;
             overflow-y: auto;
             z-index: 1000;
@@ -386,6 +412,9 @@
             gap: 8px;
             font-size: 12px;
             color: var(--vscode-dropdown-foreground);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .execution-dropdown-item:hover {
@@ -2276,13 +2305,11 @@
                 <li class="spec-item">
                     <div class="spec-item-header">
                         <div class="spec-name">${escapeHtml(displayName)}</div>
-                        ${statusBadge}
+                        ${executionControlsHTML}
                     </div>
                     <div class="spec-path">${workspaceFolderDisplay}</div>
-                    <div class="spec-progress-bar">
-                        <div class="spec-progress-fill" style="width: ${progress}%"></div>
-                    </div>
                     <div class="spec-stats">
+                        ${statusBadge}
                         <div class="spec-stat">
                             <span>${progress}%</span>
                         </div>
@@ -2291,7 +2318,9 @@
                         </div>
                         ${optionalTasks > 0 ? `<div class="spec-stat"><span>${optionalTasks} optional</span></div>` : ''}
                     </div>
-                    ${executionControlsHTML}
+                    <div class="spec-progress-bar">
+                        <div class="spec-progress-fill" style="width: ${progress}%"></div>
+                    </div>
                     <div class="spec-actions">
                         <button class="action-btn" data-spec="${escapeHtml(spec.name)}" data-file="requirements.md" title="Open requirements.md">
                             <span class="codicon codicon-file"></span> Requirements
