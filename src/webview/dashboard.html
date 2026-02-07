@@ -412,9 +412,14 @@
             gap: 8px;
             font-size: 12px;
             color: var(--vscode-dropdown-foreground);
+        }
+
+        .execution-dropdown-item span:not(.codicon) {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            flex: 1;
+            min-width: 0;
         }
 
         .execution-dropdown-item:hover {
