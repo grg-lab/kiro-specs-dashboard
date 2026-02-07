@@ -36,6 +36,18 @@ Execute specs directly from the dashboard with a single click.
 
 ### 🎨 Improvements
 
+- **Dashboard Spec Cards Redesign**: Completely redesigned spec card layout for better information hierarchy and usability
+  - Execute button moved to top-right next to spec name for immediate access
+  - Status badge and task statistics displayed in a single compact row
+  - Enhanced progress bar with 8px height, rounded corners (5px), and diagonal stripe pattern for unfilled portion
+  - Action buttons (Requirements, Design, Tasks, Notes) moved to bottom for consistent placement
+  - Improved visual spacing and alignment throughout the card
+  - Removed execution status display for simplified UI (button remains consistent)
+- **Profile Dropdown Enhancements**:
+  - Reduced dropdown dimensions for better fit (min-width: 180px, max-width: 200px, max-height: 200px)
+  - Added toggle functionality - clicking Execute button again closes the dropdown
+  - Added text truncation with ellipsis (...) for long profile names
+  - Right-aligned dropdown to prevent clipping when editor panel is open
 - Enhanced dashboard header with Profiles action button
 - Improved spec card layout with execution controls
 - Real-time execution state persistence across VSCode sessions

@@ -51,10 +51,17 @@ This extension only reads and writes files in your workspace's `.kiro/specs/` di
 ### Viewing Specs
 
 The dashboard displays all specs found in your workspace's `.kiro/specs/` directories. Each spec card shows:
-- Spec name and workspace folder (in multi-root workspaces)
-- Progress bar with completion percentage
-- Task counts (completed/total)
-- Quick access buttons to open spec files and notes
+- Spec name with Execute button in top-right corner for quick access
+- Workspace folder indicator (in multi-root workspaces)
+- Status badge (TODO/ACTIVE/DONE) with task statistics in a compact row
+- Enhanced progress bar with rounded corners and visual pattern
+- Quick access buttons at the bottom to open spec files and notes
+
+The spec cards have been redesigned with improved information hierarchy:
+- Execute button positioned prominently next to the spec name
+- Status and statistics displayed in a single, easy-to-scan row
+- 8px progress bar with rounded corners and diagonal stripe pattern for better visibility
+- Action buttons consistently placed at the bottom of each card
 
 ### Opening Spec Files
 

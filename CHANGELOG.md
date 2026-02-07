@@ -27,9 +27,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Dashboard Spec Cards Redesign**: Completely redesigned spec card layout for better information hierarchy
+  - Execute button moved to top-right next to spec name for quick access
+  - Status badge and task statistics displayed in a single compact row
+  - Enhanced progress bar with 8px height, rounded corners, and diagonal stripe pattern for unfilled portion
+  - Action buttons (Requirements, Design, Tasks, Notes) moved to bottom for consistent placement
+  - Improved visual spacing and alignment throughout the card
+  - Removed execution status display for simplified UI (button remains consistent)
 - Enhanced dashboard header with Profiles action button
 - Improved spec card layout with execution controls section
 - Updated dashboard UI to show execution status on spec cards
+- **Profile Dropdown Improvements**: 
+  - Reduced dropdown dimensions (min-width: 180px, max-width: 200px, max-height: 200px)
+  - Added toggle functionality - clicking Execute button again closes the dropdown
+  - Added text truncation with ellipsis for long profile names
+  - Right-aligned dropdown to prevent clipping when editor panel is open
 - **Command Category Update**: Changed all command categories from "Kiro" to "Specs Dashboard" for consistency
 - **Removed Commands**: Removed internal and debug commands (openFile, openNotes, openHistory, listKiroCommands, testKiroMessage)
 
