@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'none'; 
+                   style-src {{cspSource}} 'unsafe-inline'; 
+                   script-src 'nonce-{{nonce}}'; 
+                   font-src {{cspSource}};">
+    <link rel="stylesheet" href="{{codiconsUri}}">
+    <link rel="stylesheet" href="{{highlightCssUri}}">
+    <title>Manage Profiles - Kiro Specs Dashboard</title>
+    <style nonce="{{nonce}}">
+        /* Native IDE Styling - VSCode Design System */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--vscode-font-family);
+            font-size: 13px;
+            color: var(--vscode-foreground);
+            background: var(--vscode-editor-background);
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        .profiles-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .profiles-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-sideBarSectionHeader-background);
+        }
+
+        .profiles-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .create-profile-btn {
+            padding: 6px 14px;
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            font-family: var(--vscode-font-family);
+            font-size: 12px;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .create-profile-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .create-profile-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        /* Content Area */
+        .profiles-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* Profile List */
+        .profile-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .profile-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 2px;
+        }
+
+        .profile-item:nth-child(even) {
+            background: var(--vscode-sideBar-background);
+        }
+        
+        .profile-item:nth-child(odd) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .profile-item:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .profile-icon {
+            font-size: 24px;
+            color: var(--vscode-foreground);
+            flex-shrink: 0;
+        }
+
+        .profile-details {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .profile-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 2px;
+        }
+
+        .profile-description {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .profile-action-btn {
+            padding: 4px 8px;
+            background: transparent;
+            color: var(--vscode-button-foreground);
+            border: 1px solid var(--vscode-button-border);
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 11px;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .profile-action-btn:hover:not(:disabled) {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .profile-action-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .profile-action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .profile-action-btn.danger {
+            color: var(--vscode-errorForeground);
+            border-color: var(--vscode-errorForeground);
+        }
+
+        .profile-action-btn.danger:hover:not(:disabled) {
+            background: var(--vscode-statusBarItem-errorBackground);
+        }
+
+        /* Forms */
+        .form-container {
+            display: none;
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 2px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .form-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            margin-bottom: 6px;
+        }
+
+        .form-label .required {
+            color: var(--vscode-errorForeground);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 6px 8px;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: var(--vscode-input-placeholderForeground);
+        }
+
+        .form-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .form-textarea {
+            font-family: var(--vscode-editor-font-family);
+            font-size: 12px;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-help {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-top: 4px;
+        }
+
+        .form-error {
+            font-size: 11px;
+            color: var(--vscode-errorForeground);
+            margin-top: 4px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .form-btn {
+            padding: 6px 14px;
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            font-family: var(--vscode-font-family);
+            font-size: 12px;
+            outline: none;
+        }
+
+        .form-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .form-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .form-btn.secondary {
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+        }
+
+        .form-btn.secondary:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        /* Profile Detail View */
+        .profile-detail {
+            display: none;
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 2px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .profile-detail.active {
+            display: block;
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .detail-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .close-detail-btn {
+            padding: 4px;
+            width: 24px;
+            height: 24px;
+            background: transparent;
+            color: var(--vscode-foreground);
+            border: none;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-detail-btn:hover {
+            background: var(--vscode-toolbar-hoverBackground);
+        }
+
+        .close-detail-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .detail-section {
+            margin-bottom: 16px;
+        }
+
+        .detail-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            margin-bottom: 8px;
+        }
+
+        .detail-content {
+            font-size: 12px;
+            color: var(--vscode-foreground);
+        }
+
+        .detail-content pre {
+            background: var(--vscode-textCodeBlock-background);
+            border: 1px solid var(--vscode-panel-border);
+            padding: 12px;
+            overflow-x: auto;
+            border-radius: 2px;
+        }
+
+        .detail-content code {
+            font-family: var(--vscode-editor-font-family);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* Loading */
+        .loading {
+            padding: 20px;
+            text-align: center;
+            color: var(--vscode-descriptionForeground);
+            font-size: 12px;
+        }
+
+        /* Error */
+        .error-message {
+            background: var(--vscode-inputValidation-errorBackground);
+            color: var(--vscode-inputValidation-errorForeground);
+            border: 1px solid var(--vscode-inputValidation-errorBorder);
+            padding: 8px 12px;
+            font-size: 12px;
+            margin-bottom: 16px;
+            border-radius: 2px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            padding: 32px 20px;
+            text-align: center;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .empty-state-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--vscode-foreground);
+        }
+
+        .empty-state-text {
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        /* Codicon styling */
+        .codicon {
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="profiles-container">
+        <!-- Header -->
+        <div class="profiles-header">
+            <h1 class="profiles-title">Manage Execution Profiles</h1>
+            <button class="create-profile-btn" id="createProfileBtn">
+                <span class="codicon codicon-add"></span>
+                Create Profile
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="profiles-content">
+            <!-- Loading State -->
+            <div class="loading" id="loadingState">Loading profiles...</div>
+
+            <!-- Error Message -->
+            <div class="error-message hidden" id="errorMessage"></div>
+
+            <!-- Profile Detail View -->
+            <div class="profile-detail" id="profileDetail">
+                <div class="detail-header">
+                    <h2 class="detail-title" id="detailTitle"></h2>
+                    <button class="close-detail-btn" id="closeDetailBtn">
+                        <span class="codicon codicon-close"></span>
+                    </button>
+                </div>
+                <div class="detail-section">
+                    <h3 class="detail-section-title">Profile Information</h3>
+                    <div class="detail-content" id="detailInfo"></div>
+                </div>
+                <div class="detail-section">
+                    <h3 class="detail-section-title">Prompt Template</h3>
+                    <div class="detail-content">
+                        <pre><code id="detailTemplate"></code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Profile Form -->
+            <div class="form-container" id="createForm">
+                <div class="form-header">
+                    <h2 class="form-title">Create New Profile</h2>
+                </div>
+                <form id="createProfileForm">
+                    <div class="form-group">
+                        <label class="form-label" for="createId">
+                            ID <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            id="createId" 
+                            placeholder="my-custom-profile"
+                            required
+                        />
+                        <div class="form-help">Unique identifier in kebab-case (e.g., my-custom-profile)</div>
+                        <div class="form-error hidden" id="createIdError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="createName">
+                            Name <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            id="createName" 
+                            placeholder="My Custom Profile"
+                            required
+                        />
+                        <div class="form-help">Display name for the profile</div>
+                        <div class="form-error hidden" id="createNameError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="createIcon">
+                            Icon <span class="required">*</span>
+                        </label>
+                        <select class="form-select" id="createIcon" required>
+                            <option value="">Select an icon...</option>
+                            <option value="rocket">🚀 Rocket</option>
+                            <option value="zap">⚡ Zap</option>
+                            <option value="beaker">🧪 Beaker</option>
+                            <option value="gear">⚙️ Gear</option>
+                            <option value="package">📦 Package</option>
+                            <option value="tools">🔧 Tools</option>
+                            <option value="star">⭐ Star</option>
+                            <option value="flame">🔥 Flame</option>
+                        </select>
+                        <div class="form-help">VSCode codicon name</div>
+                        <div class="form-error hidden" id="createIconError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="createDescription">
+                            Description
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            id="createDescription" 
+                            placeholder="Brief description of this profile"
+                        />
+                        <div class="form-help">Optional description</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="createPromptTemplate">
+                            Prompt Template <span class="required">*</span>
+                        </label>
+                        <textarea 
+                            class="form-textarea" 
+                            id="createPromptTemplate" 
+                            placeholder="Enter your prompt template here. Use {{specName}}, {{totalTasks}}, etc."
+                            required
+                        ></textarea>
+                        <div class="form-help">
+                            Available variables: {{specName}}, {{specPath}}, {{totalTasks}}, {{completedTasks}}, {{remainingTasks}}, {{workspaceFolder}}, {{specRelativePath}}
+                        </div>
+                        <div class="form-error hidden" id="createPromptTemplateError"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="form-btn secondary" id="cancelCreateBtn">Cancel</button>
+                        <button type="submit" class="form-btn">Create Profile</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Edit Profile Form -->
+            <div class="form-container" id="editForm">
+                <div class="form-header">
+                    <h2 class="form-title">Edit Profile</h2>
+                </div>
+                <form id="editProfileForm">
+                    <input type="hidden" id="editProfileId" />
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="editId">
+                            ID
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            id="editId" 
+                            disabled
+                        />
+                        <div class="form-help">Profile ID cannot be changed</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="editName">
+                            Name <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            id="editName" 
+                            required
+                        />
+                        <div class="form-error hidden" id="editNameError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="editIcon">
+                            Icon <span class="required">*</span>
+                        </label>
+                        <select class="form-select" id="editIcon" required>
+                            <option value="">Select an icon...</option>
+                            <option value="rocket">🚀 Rocket</option>
+                            <option value="zap">⚡ Zap</option>
+                            <option value="beaker">🧪 Beaker</option>
+                            <option value="gear">⚙️ Gear</option>
+                            <option value="package">📦 Package</option>
+                            <option value="tools">🔧 Tools</option>
+                            <option value="star">⭐ Star</option>
+                            <option value="flame">🔥 Flame</option>
+                        </select>
+                        <div class="form-error hidden" id="editIconError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="editDescription">
+                            Description
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            id="editDescription"
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="editPromptTemplate">
+                            Prompt Template <span class="required">*</span>
+                        </label>
+                        <textarea 
+                            class="form-textarea" 
+                            id="editPromptTemplate" 
+                            required
+                        ></textarea>
+                        <div class="form-help">
+                            Available variables: {{specName}}, {{specPath}}, {{totalTasks}}, {{completedTasks}}, {{remainingTasks}}, {{workspaceFolder}}, {{specRelativePath}}
+                        </div>
+                        <div class="form-error hidden" id="editPromptTemplateError"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="form-btn secondary" id="cancelEditBtn">Cancel</button>
+                        <button type="submit" class="form-btn">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Profile List -->
+            <ul class="profile-list" id="profileList">
+                <!-- Profiles will be rendered here -->
+            </ul>
+
+            <!-- Empty State -->
+            <div class="empty-state hidden" id="emptyState">
+                <div class="empty-state-title">No Profiles Found</div>
+                <div class="empty-state-text">
+                    Create your first custom execution profile to get started.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{highlightJsUri}}" nonce="{{nonce}}"></script>
+    <script nonce="{{nonce}}">
+        // VSCode API
+        const vscode = acquireVsCodeApi();
+
+        // State
+        let profiles = [];
+        let currentView = 'list'; // 'list', 'create', 'edit', 'detail'
+        let editingProfileId = null;
+
+        // DOM Elements
+        const loadingState = document.getElementById('loadingState');
+        const errorMessage = document.getElementById('errorMessage');
+        const profileList = document.getElementById('profileList');
+        const emptyState = document.getElementById('emptyState');
+        const createForm = document.getElementById('createForm');
+        const editForm = document.getElementById('editForm');
+        const profileDetail = document.getElementById('profileDetail');
+        const createProfileBtn = document.getElementById('createProfileBtn');
+
+        // Initialize
+        function init() {
+            setupEventListeners();
+            requestProfiles();
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Create Profile Button
+            createProfileBtn.addEventListener('click', showCreateForm);
+
+            // Create Form
+            document.getElementById('createProfileForm').addEventListener('submit', handleCreateSubmit);
+            document.getElementById('cancelCreateBtn').addEventListener('click', hideCreateForm);
+
+            // Edit Form
+            document.getElementById('editProfileForm').addEventListener('submit', handleEditSubmit);
+            document.getElementById('cancelEditBtn').addEventListener('click', hideEditForm);
+
+            // Detail View
+            document.getElementById('closeDetailBtn').addEventListener('click', hideDetailView);
+
+            // Profile List - Event Delegation
+            profileList.addEventListener('click', (e) => {
+                const target = e.target.closest('[data-action]');
+                if (!target) return;
+
+                const action = target.dataset.action;
+                const profileId = target.dataset.profileId;
+
+                switch (action) {
+                    case 'edit':
+                        showEditForm(profileId);
+                        break;
+                    case 'delete':
+                        handleDelete(profileId);
+                        break;
+                    case 'reset':
+                        handleReset(profileId);
+                        break;
+                    case 'view-detail':
+                        showProfileDetail(profileId);
+                        break;
+                }
+            });
+
+            // Message Handler
+            window.addEventListener('message', handleMessage);
+        }
+
+        // Request profiles from extension
+        function requestProfiles() {
+            vscode.postMessage({ type: 'loadProfiles' });
+        }
+
+        // Handle messages from extension
+        function handleMessage(event) {
+            const message = event.data;
+
+            switch (message.type) {
+                case 'profilesLoaded':
+                    handleProfilesLoaded(message.profiles);
+                    break;
+                case 'profileCreated':
+                    handleProfileCreated(message.profile);
+                    break;
+                case 'profileUpdated':
+                    handleProfileUpdated(message.profile);
+                    break;
+                case 'profileDeleted':
+                    handleProfileDeleted(message.profileId);
+                    break;
+                case 'profileReset':
+                    handleProfileReset(message.profile);
+                    break;
+                case 'error':
+                    handleError(message.message, message.details);
+                    break;
+            }
+        }
+
+        // Handle profiles loaded
+        function handleProfilesLoaded(loadedProfiles) {
+            profiles = loadedProfiles;
+            loadingState.classList.add('hidden');
+            renderProfiles();
+        }
+
+        // Handle profile created
+        function handleProfileCreated(profile) {
+            profiles.push(profile);
+            hideCreateForm();
+            renderProfiles();
+            showSuccess('Profile created successfully');
+        }
+
+        // Handle profile updated
+        function handleProfileUpdated(profile) {
+            const index = profiles.findIndex(p => p.id === profile.id);
+            if (index !== -1) {
+                profiles[index] = profile;
+            }
+            hideEditForm();
+            renderProfiles();
+            showSuccess('Profile updated successfully');
+        }
+
+        // Handle profile deleted
+        function handleProfileDeleted(profileId) {
+            profiles = profiles.filter(p => p.id !== profileId);
+            renderProfiles();
+            showSuccess('Profile deleted successfully');
+        }
+
+        // Handle profile reset
+        function handleProfileReset(profile) {
+            const index = profiles.findIndex(p => p.id === profile.id);
+            if (index !== -1) {
+                profiles[index] = profile;
+            }
+            renderProfiles();
+            showSuccess('Profile reset to defaults');
+        }
+
+        // Handle error
+        function handleError(message, details) {
+            errorMessage.textContent = details ? `${message}: ${details}` : message;
+            errorMessage.classList.remove('hidden');
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            // Reuse error message element for success (could be styled differently)
+            errorMessage.style.background = 'var(--vscode-editorInfo-background)';
+            errorMessage.style.color = 'var(--vscode-editorInfo-foreground)';
+            errorMessage.style.borderColor = 'var(--vscode-editorInfo-border)';
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+                errorMessage.style.background = '';
+                errorMessage.style.color = '';
+                errorMessage.style.borderColor = '';
+            }, 3000);
+        }
+
+        // Render profiles
+        function renderProfiles() {
+            if (profiles.length === 0) {
+                profileList.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            profileList.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+
+            profileList.innerHTML = profiles.map((profile, index) => `
+                <li class="profile-item">
+                    <div class="profile-info" data-action="view-detail" data-profile-id="${profile.id}">
+                        <span class="profile-icon codicon codicon-${profile.icon}"></span>
+                        <div class="profile-details">
+                            <div class="profile-name">
+                                ${escapeHtml(profile.name)}
+                                ${profile.isBuiltIn ? '<span class="profile-badge">Built-in</span>' : ''}
+                            </div>
+                            ${profile.description ? `<div class="profile-description">${escapeHtml(profile.description)}</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="profile-action-btn" data-action="edit" data-profile-id="${profile.id}">
+                            <span class="codicon codicon-edit"></span>
+                            Edit
+                        </button>
+                        ${profile.isBuiltIn ? `
+                            <button class="profile-action-btn" data-action="reset" data-profile-id="${profile.id}">
+                                <span class="codicon codicon-refresh"></span>
+                                Reset
+                            </button>
+                        ` : `
+                            <button class="profile-action-btn danger" data-action="delete" data-profile-id="${profile.id}">
+                                <span class="codicon codicon-trash"></span>
+                                Delete
+                            </button>
+                        `}
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        // Show create form
+        function showCreateForm() {
+            currentView = 'create';
+            createForm.classList.add('active');
+            editForm.classList.remove('active');
+            profileDetail.classList.remove('active');
+            profileList.classList.add('hidden');
+            document.getElementById('createProfileForm').reset();
+            clearFormErrors('create');
+        }
+
+        // Hide create form
+        function hideCreateForm() {
+            currentView = 'list';
+            createForm.classList.remove('active');
+            profileList.classList.remove('hidden');
+        }
+
+        // Show edit form
+        function showEditForm(profileId) {
+            const profile = profiles.find(p => p.id === profileId);
+            if (!profile) return;
+
+            currentView = 'edit';
+            editingProfileId = profileId;
+            editForm.classList.add('active');
+            createForm.classList.remove('active');
+            profileDetail.classList.remove('active');
+            profileList.classList.add('hidden');
+
+            // Populate form
+            document.getElementById('editProfileId').value = profile.id;
+            document.getElementById('editId').value = profile.id;
+            document.getElementById('editName').value = profile.name;
+            document.getElementById('editIcon').value = profile.icon;
+            document.getElementById('editDescription').value = profile.description || '';
+            document.getElementById('editPromptTemplate').value = profile.promptTemplate;
+
+            clearFormErrors('edit');
+        }
+
+        // Hide edit form
+        function hideEditForm() {
+            currentView = 'list';
+            editForm.classList.remove('active');
+            profileList.classList.remove('hidden');
+            editingProfileId = null;
+        }
+
+        // Show profile detail
+        function showProfileDetail(profileId) {
+            const profile = profiles.find(p => p.id === profileId);
+            if (!profile) return;
+
+            currentView = 'detail';
+            profileDetail.classList.add('active');
+            createForm.classList.remove('active');
+            editForm.classList.remove('active');
+            profileList.classList.add('hidden');
+
+            // Populate detail view
+            document.getElementById('detailTitle').textContent = profile.name;
+            document.getElementById('detailInfo').innerHTML = `
+                <p><strong>ID:</strong> ${escapeHtml(profile.id)}</p>
+                <p><strong>Icon:</strong> <span class="codicon codicon-${profile.icon}"></span> ${escapeHtml(profile.icon)}</p>
+                ${profile.description ? `<p><strong>Description:</strong> ${escapeHtml(profile.description)}</p>` : ''}
+                <p><strong>Type:</strong> ${profile.isBuiltIn ? 'Built-in' : 'Custom'}</p>
+                <p><strong>Created:</strong> ${new Date(profile.createdAt).toLocaleString()}</p>
+                <p><strong>Updated:</strong> ${new Date(profile.updatedAt).toLocaleString()}</p>
+            `;
+            
+            const templateCode = document.getElementById('detailTemplate');
+            templateCode.textContent = profile.promptTemplate;
+            
+            // Apply syntax highlighting if available
+            if (typeof hljs !== 'undefined') {
+                hljs.highlightElement(templateCode);
+            }
+        }
+
+        // Hide detail view
+        function hideDetailView() {
+            currentView = 'list';
+            profileDetail.classList.remove('active');
+            profileList.classList.remove('hidden');
+        }
+
+        // Handle create form submit
+        function handleCreateSubmit(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('createId').value.trim();
+            const name = document.getElementById('createName').value.trim();
+            const icon = document.getElementById('createIcon').value;
+            const description = document.getElementById('createDescription').value.trim();
+            const promptTemplate = document.getElementById('createPromptTemplate').value.trim();
+
+            // Validate
+            clearFormErrors('create');
+            let hasErrors = false;
+
+            if (!id) {
+                showFormError('createId', 'ID is required');
+                hasErrors = true;
+            } else if (!/^[a-z0-9-]+$/.test(id)) {
+                showFormError('createId', 'ID must be in kebab-case (lowercase letters, numbers, and hyphens only)');
+                hasErrors = true;
+            } else if (profiles.some(p => p.id === id)) {
+                showFormError('createId', 'A profile with this ID already exists');
+                hasErrors = true;
+            }
+
+            if (!name) {
+                showFormError('createName', 'Name is required');
+                hasErrors = true;
+            }
+
+            if (!icon) {
+                showFormError('createIcon', 'Icon is required');
+                hasErrors = true;
+            }
+
+            if (!promptTemplate) {
+                showFormError('createPromptTemplate', 'Prompt template is required');
+                hasErrors = true;
+            }
+
+            if (hasErrors) return;
+
+            // Create profile object
+            const profile = {
+                id,
+                name,
+                icon,
+                description: description || undefined,
+                promptTemplate,
+                isBuiltIn: false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            // Send to extension
+            vscode.postMessage({
+                type: 'createProfile',
+                profile
+            });
+        }
+
+        // Handle edit form submit
+        function handleEditSubmit(event) {
+            event.preventDefault();
+
+            const profileId = document.getElementById('editProfileId').value;
+            const name = document.getElementById('editName').value.trim();
+            const icon = document.getElementById('editIcon').value;
+            const description = document.getElementById('editDescription').value.trim();
+            const promptTemplate = document.getElementById('editPromptTemplate').value.trim();
+
+            // Validate
+            clearFormErrors('edit');
+            let hasErrors = false;
+
+            if (!name) {
+                showFormError('editName', 'Name is required');
+                hasErrors = true;
+            }
+
+            if (!icon) {
+                showFormError('editIcon', 'Icon is required');
+                hasErrors = true;
+            }
+
+            if (!promptTemplate) {
+                showFormError('editPromptTemplate', 'Prompt template is required');
+                hasErrors = true;
+            }
+
+            if (hasErrors) return;
+
+            // Create updates object
+            const updates = {
+                name,
+                icon,
+                description: description || undefined,
+                promptTemplate,
+                updatedAt: new Date().toISOString()
+            };
+
+            // Send to extension
+            vscode.postMessage({
+                type: 'updateProfile',
+                profileId,
+                updates
+            });
+        }
+
+        // Handle delete
+        function handleDelete(profileId) {
+            const profile = profiles.find(p => p.id === profileId);
+            if (!profile) return;
+
+            if (profile.isBuiltIn) {
+                handleError('Cannot delete built-in profiles');
+                return;
+            }
+
+            // Send confirmation request to extension
+            vscode.postMessage({
+                type: 'confirmDelete',
+                profileId,
+                profileName: profile.name
+            });
+        }
+
+        // Handle reset
+        function handleReset(profileId) {
+            const profile = profiles.find(p => p.id === profileId);
+            if (!profile) return;
+
+            if (!profile.isBuiltIn) {
+                handleError('Only built-in profiles can be reset');
+                return;
+            }
+
+            // Send confirmation request to extension
+            vscode.postMessage({
+                type: 'confirmReset',
+                profileId,
+                profileName: profile.name
+            });
+        }
+
+        // Form error handling
+        function showFormError(fieldId, message) {
+            const errorElement = document.getElementById(`${fieldId}Error`);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+            }
+        }
+
+        function clearFormErrors(formType) {
+            const prefix = formType === 'create' ? 'create' : 'edit';
+            const fields = ['Id', 'Name', 'Icon', 'PromptTemplate'];
+            fields.forEach(field => {
+                const errorElement = document.getElementById(`${prefix}${field}Error`);
+                if (errorElement) {
+                    errorElement.textContent = '';
+                    errorElement.classList.add('hidden');
+                }
+            });
+        }
+
+        // Utility: Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

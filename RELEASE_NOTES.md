@@ -1,5 +1,63 @@
 # Release Notes
 
+## 🎉 v0.1.2 - Execution Profiles & Automated Spec Execution
+
+**Release Date:** February 6, 2026
+
+### 🎯 What's New
+
+#### **Execution Profiles**
+Create and manage custom execution profiles to automate spec execution with tailored prompts and workflows.
+
+**Profile Management:**
+- **Built-in Profiles**: Two ready-to-use profiles included
+  - **MVP (Required Tasks)**: Executes only required tasks, skipping optional ones
+  - **Full (All Tasks)**: Executes all tasks including optional ones
+- **Custom Profiles**: Create your own profiles with custom prompt templates
+- **Profile Editor**: Manage profiles through a dedicated panel accessible via "Manage Profiles" button
+- **Template Variables**: Use placeholders like `{{specName}}`, `{{specPath}}`, `{{totalTasks}}`, etc. in prompt templates
+- **Multi-Workspace Support**: Profiles are workspace-scoped with automatic conflict resolution
+
+**Access:** Click the "Manage Profiles" button in the dashboard header or run command `Specs Dashboard: Manage Profiles`
+
+#### **Direct Spec Execution from Dashboard**
+Execute specs directly from the dashboard with a single click.
+
+**How it Works:**
+1. Click the "Execute" button on any spec card in the dashboard
+2. Select a profile from the dropdown menu (MVP, Full, or custom)
+3. The extension sends the profile's prompt template to Kiro with spec details
+4. Track execution status in real-time with visual indicators
+
+**Execution Features:**
+- **Real-time Status**: Visual indicators show Running, Completed, Failed, or Cancelled states
+- **Cancel Execution**: Stop running executions with the cancel button
+- **Task Progress Monitoring**: Automatic task file watching updates progress during execution
+
+### 🎨 Improvements
+
+- Enhanced dashboard header with Profiles action button
+- Improved spec card layout with execution controls
+- Real-time execution state persistence across VSCode sessions
+- Responsive profile dropdown with icon support
+- Better error handling and user feedback for execution operations
+- Updated command category from "Kiro" to "Specs Dashboard" for all commands
+- Streamlined command palette with removal of internal/debug commands
+
+### 🛠️ Technical
+
+- Added `ProfileManager` for CRUD operations on execution profiles
+- Added `ExecutionManager` for spec execution lifecycle management
+- Added `ProfilesPanelManager` for profile management UI
+- Implemented file-based profile storage in `.kiro/execution-profiles.json`
+- Added workspace state persistence for execution states
+- Implemented task file watching for progress tracking during execution
+- Added template variable substitution for dynamic prompt generation
+- Removed internal commands: openFile, openNotes, openHistory, listKiroCommands, testKiroMessage
+- Added new command: `Specs Dashboard: Show Metrics` for opening analytics panel
+
+---
+
 ## 🎉 v0.1.1 - Metrics & Analytics
 
 **Release Date:** February 5, 2026

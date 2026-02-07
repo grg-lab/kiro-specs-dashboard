@@ -41,9 +41,8 @@
             border-bottom: 1px solid var(--vscode-panel-border);
             padding: 8px 12px;
             display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 8px 16px;
+            flex-direction: column;
+            gap: 8px;
             font-size: 11px;
         }
 
@@ -70,20 +69,30 @@
 
         .button-row {
             display: flex;
+            border-radius: 4px;
+            overflow: hidden;
+            width: 100%;
         }
 
         .analytics-button {
             background: var(--vscode-button-background);
             color: var(--vscode-button-foreground);
             border: none;
-            padding: 4px 12px;
-            border-radius: 2px;
+            padding: 8px 12px;
+            border-radius: 0;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             font-size: 11px;
             font-family: var(--vscode-font-family);
+            border-right: 1px solid rgba(0, 0, 0, 0.2);
+            flex: 1;
+        }
+
+        .analytics-button:last-child {
+            border-right: none;
         }
 
         .analytics-button:hover {
@@ -308,6 +317,143 @@
         }
 
         .action-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        /* Execution Controls */
+        .execution-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .execution-btn-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .execution-btn {
+            padding: 4px 12px;
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 11px;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .execution-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .execution-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .execution-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .execution-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 2px;
+            background: var(--vscode-dropdown-background);
+            border: 1px solid var(--vscode-dropdown-border);
+            border-radius: 2px;
+            min-width: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .execution-dropdown-item {
+            padding: 6px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--vscode-dropdown-foreground);
+        }
+
+        .execution-dropdown-item:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+
+        .execution-dropdown-item .codicon {
+            font-size: 14px;
+        }
+
+        .execution-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .execution-status.running {
+            background: var(--vscode-statusBarItem-warningBackground);
+            color: var(--vscode-statusBarItem-warningForeground);
+        }
+
+        .execution-status.completed {
+            background: var(--vscode-testing-iconPassed);
+            color: var(--vscode-button-foreground);
+        }
+
+        .execution-status.failed {
+            background: var(--vscode-statusBarItem-errorBackground);
+            color: var(--vscode-statusBarItem-errorForeground);
+        }
+
+        .execution-status.cancelled {
+            background: var(--vscode-descriptionForeground);
+            color: var(--vscode-button-foreground);
+        }
+
+        .execution-progress {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            font-family: var(--vscode-editor-font-family);
+        }
+
+        .cancel-btn {
+            padding: 2px 8px;
+            background: var(--vscode-statusBarItem-errorBackground);
+            color: var(--vscode-statusBarItem-errorForeground);
+            border: none;
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 11px;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            /* HIDDEN: Simplified UI - cancel execution feature hidden for now */
+            display: none !important;
+        }
+
+        .cancel-btn:hover {
+            opacity: 0.8;
+        }
+
+        .cancel-btn:focus {
             outline: 1px solid var(--vscode-focusBorder);
             outline-offset: -1px;
         }
@@ -626,6 +772,360 @@
             font-size: 12px;
         }
 
+        /* Profile Settings Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .modal {
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-panel-border);
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-sideBarSectionHeader-background);
+        }
+
+        .modal-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .modal-close-btn {
+            padding: 4px;
+            width: 24px;
+            height: 24px;
+            background: transparent;
+            color: var(--vscode-foreground);
+            border: none;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close-btn:hover {
+            background: var(--vscode-toolbar-hoverBackground);
+        }
+
+        .modal-close-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-sideBar-background);
+        }
+
+        .modal-btn {
+            padding: 6px 14px;
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            font-family: var(--vscode-font-family);
+            font-size: 12px;
+            outline: none;
+        }
+
+        .modal-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .modal-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .modal-btn.secondary {
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+        }
+
+        .modal-btn.secondary:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        .modal-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Profile List */
+        .profile-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .profile-list-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .create-profile-btn {
+            padding: 4px 12px;
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            font-family: var(--vscode-font-family);
+            font-size: 11px;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .create-profile-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .create-profile-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .profile-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .profile-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border: 1px solid var(--vscode-panel-border);
+            margin-bottom: 8px;
+            background: var(--vscode-sideBar-background);
+        }
+
+        .profile-item:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .profile-icon {
+            font-size: 20px;
+            color: var(--vscode-foreground);
+        }
+
+        .profile-details {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            margin-bottom: 2px;
+        }
+
+        .profile-description {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .profile-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 2px;
+            margin-left: 8px;
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .profile-action-btn {
+            padding: 4px 8px;
+            background: transparent;
+            color: var(--vscode-button-foreground);
+            border: 1px solid var(--vscode-button-border);
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 11px;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .profile-action-btn:hover:not(:disabled) {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .profile-action-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        .profile-action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Profile Form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            margin-bottom: 6px;
+        }
+
+        .form-label .required {
+            color: var(--vscode-errorForeground);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 6px 8px;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: var(--vscode-input-placeholderForeground);
+        }
+
+        .form-textarea {
+            font-family: var(--vscode-editor-font-family);
+            font-size: 12px;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-help {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-top: 4px;
+        }
+
+        .form-error {
+            font-size: 11px;
+            color: var(--vscode-errorForeground);
+            margin-top: 4px;
+        }
+
+        .template-variables-doc {
+            background: var(--vscode-textCodeBlock-background);
+            border: 1px solid var(--vscode-panel-border);
+            padding: 12px;
+            margin-top: 8px;
+            font-size: 11px;
+        }
+
+        .template-variables-doc h4 {
+            font-size: 12px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: var(--vscode-foreground);
+        }
+
+        .template-variables-doc ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .template-variables-doc li {
+            margin: 4px 0;
+            font-family: var(--vscode-editor-font-family);
+        }
+
+        .template-variables-doc code {
+            background: var(--vscode-editor-background);
+            padding: 2px 4px;
+            color: var(--vscode-textPreformat-foreground);
+        }
+
+        .icon-preview {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .icon-preview-label {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .icon-preview-icon {
+            font-size: 24px;
+            color: var(--vscode-foreground);
+        }
+
         /* Detail View - Native IDE Style (Requirements: 16.3, 16.4, 16.7, 16.8) */
         .detail-view {
             border-top: 1px solid var(--vscode-panel-border);
@@ -748,6 +1248,232 @@
             font-size: 12px;
         }
 
+        /* Execution History Styles */
+        .history-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border: 1px solid var(--vscode-panel-border);
+            margin-bottom: 8px;
+            background: var(--vscode-sideBar-background);
+            cursor: pointer;
+        }
+
+        .history-item:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+
+        .history-item-main {
+            flex: 1;
+        }
+
+        .history-item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .history-spec-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .history-profile-name {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .history-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            font-family: var(--vscode-editor-font-family);
+        }
+
+        .history-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .history-status-badge.running {
+            background: var(--vscode-statusBarItem-warningBackground);
+            color: var(--vscode-statusBarItem-warningForeground);
+        }
+
+        .history-status-badge.completed {
+            background: var(--vscode-testing-iconPassed);
+            color: var(--vscode-button-foreground);
+        }
+
+        .history-status-badge.failed {
+            background: var(--vscode-statusBarItem-errorBackground);
+            color: var(--vscode-statusBarItem-errorForeground);
+        }
+
+        .history-status-badge.cancelled {
+            background: var(--vscode-descriptionForeground);
+            color: var(--vscode-button-foreground);
+        }
+
+        .history-detail-header {
+            margin-bottom: 16px;
+        }
+
+        .history-detail-content {
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-panel-border);
+            padding: 16px;
+        }
+
+        .history-detail-section {
+            margin-bottom: 16px;
+        }
+
+        .history-detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-detail-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--vscode-descriptionForeground);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .history-detail-value {
+            font-size: 13px;
+            color: var(--vscode-foreground);
+            font-family: var(--vscode-editor-font-family);
+        }
+
+        .history-detail-error {
+            background: var(--vscode-inputValidation-errorBackground);
+            color: var(--vscode-inputValidation-errorForeground);
+            border: 1px solid var(--vscode-inputValidation-errorBorder);
+            padding: 8px 12px;
+            font-size: 12px;
+            margin-top: 8px;
+            font-family: var(--vscode-editor-font-family);
+        }
+
+        /* Execution Statistics Styles */
+        .history-statistics {
+            background: var(--vscode-sideBarSectionHeader-background);
+            border: 1px solid var(--vscode-panel-border);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .statistics-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            margin-bottom: 12px;
+        }
+
+        .statistics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            padding: 12px;
+        }
+
+        .stat-card-label {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 4px;
+        }
+
+        .stat-card-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            font-family: var(--vscode-editor-font-family);
+        }
+
+        .stat-card-unit {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-left: 4px;
+        }
+
+        .statistics-section {
+            margin-bottom: 16px;
+        }
+
+        .statistics-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .statistics-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            margin-bottom: 8px;
+        }
+
+        .statistics-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        .statistics-table th,
+        .statistics-table td {
+            padding: 6px 8px;
+            text-align: left;
+            border: 1px solid var(--vscode-panel-border);
+        }
+
+        .statistics-table th {
+            background: var(--vscode-sideBarSectionHeader-background);
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .statistics-table td {
+            color: var(--vscode-foreground);
+            font-family: var(--vscode-editor-font-family);
+        }
+
+        .statistics-table tr:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+
     </style>
 </head>
 <body>
@@ -781,6 +1507,15 @@
                         <span class="codicon codicon-graph"></span>
                         Metrics
                     </button>
+                    <button class="analytics-button" id="manageProfilesBtn">
+                        <span class="codicon codicon-settings-gear"></span>
+                        Profiles
+                    </button>
+                    <!-- HIDDEN: Simplified UI - execution history feature hidden for now -->
+                    <!-- <button class="analytics-button" id="executionHistoryBtn">
+                        <span class="codicon codicon-history"></span>
+                        History
+                    </button> -->
                 </div>
             </div>
 
@@ -861,6 +1596,246 @@
             
             <!-- Pagination -->
             <div id="paginationContainer"></div>
+        </div>
+    </div>
+
+    <!-- Profile Settings Modal -->
+    <div id="profileSettingsModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Manage Execution Profiles</div>
+                <button class="modal-close-btn" id="closeProfileSettingsBtn">
+                    <span class="codicon codicon-close"></span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-list-header">
+                    <div class="profile-list-title">Execution Profiles</div>
+                    <button class="create-profile-btn" id="createProfileBtn">
+                        <span class="codicon codicon-add"></span>
+                        Create New Profile
+                    </button>
+                </div>
+                <ul class="profile-list" id="profileList">
+                    <!-- Profile items will be inserted here -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Form Modal -->
+    <div id="profileFormModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="profileFormTitle">Create Profile</div>
+                <button class="modal-close-btn" id="closeProfileFormBtn">
+                    <span class="codicon codicon-close"></span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label class="form-label" for="profileName">
+                            Name <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="profileName" 
+                            class="form-input" 
+                            placeholder="e.g., Quick MVP, Full Implementation"
+                            required
+                        />
+                        <div class="form-help">A descriptive name for this execution profile</div>
+                        <div class="form-error" id="profileNameError" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="profileIcon">
+                            Icon <span class="required">*</span>
+                        </label>
+                        <select id="profileIcon" class="form-select" required>
+                            <option value="rocket">🚀 Rocket</option>
+                            <option value="checklist">✓ Checklist</option>
+                            <option value="star">⭐ Star</option>
+                            <option value="zap">⚡ Zap</option>
+                            <option value="gear">⚙️ Gear</option>
+                            <option value="beaker">🧪 Beaker</option>
+                            <option value="flame">🔥 Flame</option>
+                            <option value="target">🎯 Target</option>
+                            <option value="play">▶️ Play</option>
+                            <option value="debug">🐛 Debug</option>
+                        </select>
+                        <div class="icon-preview">
+                            <span class="icon-preview-label">Preview:</span>
+                            <span class="codicon codicon-rocket icon-preview-icon" id="iconPreview"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="profileDescription">
+                            Description
+                        </label>
+                        <input 
+                            type="text" 
+                            id="profileDescription" 
+                            class="form-input" 
+                            placeholder="Optional description"
+                        />
+                        <div class="form-help">Optional description to help identify this profile</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="profileTemplate">
+                            Prompt Template <span class="required">*</span>
+                        </label>
+                        <textarea 
+                            id="profileTemplate" 
+                            class="form-textarea" 
+                            placeholder="Enter your prompt template with variables..."
+                            required
+                        ></textarea>
+                        <div class="form-help">The prompt that will be sent to Kiro when executing specs</div>
+                        <div class="form-error" id="profileTemplateError" style="display: none;"></div>
+                        
+                        <div class="template-variables-doc">
+                            <h4>Available Template Variables</h4>
+                            <ul>
+                                <li><code>{{specName}}</code> - Name of the spec</li>
+                                <li><code>{{specPath}}</code> - Absolute path to spec folder</li>
+                                <li><code>{{totalTasks}}</code> - Total number of tasks</li>
+                                <li><code>{{completedTasks}}</code> - Number of completed tasks</li>
+                                <li><code>{{remainingTasks}}</code> - Number of remaining tasks</li>
+                                <li><code>{{workspaceFolder}}</code> - Workspace folder name</li>
+                            </ul>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" id="cancelProfileFormBtn">Cancel</button>
+                <button class="modal-btn" id="saveProfileBtn">Save Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Execution History Modal -->
+    <div id="executionHistoryModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Execution History</div>
+                <button class="modal-close-btn" id="closeExecutionHistoryBtn">
+                    <span class="codicon codicon-close"></span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Statistics Summary -->
+                <div id="historyStatistics" class="history-statistics" style="display: none;">
+                    <div class="statistics-title">Execution Statistics</div>
+                    
+                    <!-- Overall Statistics -->
+                    <div class="statistics-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-label">Total Executions</div>
+                            <div class="stat-card-value" id="statTotalExecutions">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Success Rate</div>
+                            <div class="stat-card-value">
+                                <span id="statSuccessRate">0</span><span class="stat-card-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Avg Duration</div>
+                            <div class="stat-card-value" id="statAvgDuration">0s</div>
+                        </div>
+                    </div>
+
+                    <!-- Per-Spec Statistics -->
+                    <div class="statistics-section" id="perSpecStatsSection" style="display: none;">
+                        <div class="statistics-section-title">By Spec</div>
+                        <table class="statistics-table">
+                            <thead>
+                                <tr>
+                                    <th>Spec</th>
+                                    <th>Executions</th>
+                                    <th>Success</th>
+                                    <th>Failed</th>
+                                    <th>Avg Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="perSpecStatsBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Per-Profile Statistics -->
+                    <div class="statistics-section" id="perProfileStatsSection" style="display: none;">
+                        <div class="statistics-section-title">By Profile</div>
+                        <table class="statistics-table">
+                            <thead>
+                                <tr>
+                                    <th>Profile</th>
+                                    <th>Executions</th>
+                                    <th>Success</th>
+                                    <th>Failed</th>
+                                    <th>Avg Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="perProfileStatsBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Filter Controls -->
+                <div class="history-filters">
+                    <div class="form-group">
+                        <label class="form-label">Filter by Spec</label>
+                        <select id="historySpecFilter" class="form-select">
+                            <option value="">All Specs</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Filter by Profile</label>
+                        <select id="historyProfileFilter" class="form-select">
+                            <option value="">All Profiles</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Filter by Status</label>
+                        <select id="historyStatusFilter" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="running">Running</option>
+                            <option value="completed">Completed</option>
+                            <option value="failed">Failed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- History List View -->
+                <div id="historyListView">
+                    <ul class="history-list" id="historyList">
+                        <!-- History entries will be inserted here -->
+                    </ul>
+                    <div id="historyEmptyState" class="empty-state" style="display: none;">
+                        <div class="empty-state-text">No execution history found.</div>
+                    </div>
+                </div>
+
+                <!-- History Detail View -->
+                <div id="historyDetailView" style="display: none;">
+                    <div class="history-detail-header">
+                        <button class="modal-btn secondary" id="backToHistoryListBtn">
+                            <span class="codicon codicon-arrow-left"></span>
+                            Back to List
+                        </button>
+                    </div>
+                    <div class="history-detail-content" id="historyDetailContent">
+                        <!-- Detail content will be inserted here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -967,9 +1942,12 @@
         
         let allSpecs = [];
         let filteredSpecs = [];
+        let executionProfiles = [];
+        let executionStates = {};
         
         // Request initial data
         vscode.postMessage({ type: 'requestSpecs' });
+        vscode.postMessage({ type: 'getProfiles' });
         
         // Show loading state
         showLoading('Loading specs...');
@@ -987,6 +1965,33 @@
                     }
                     hideLoading();
                     displaySpecs(allSpecs);
+                    break;
+                case 'profilesUpdated':
+                    executionProfiles = message.profiles || [];
+                    // Refresh display if specs are already loaded
+                    if (allSpecs.length > 0) {
+                        displayPage(currentState.currentPage);
+                    }
+                    break;
+                case 'executionStateChanged':
+                    // Update execution state for a specific spec
+                    if (message.specId && message.state) {
+                        executionStates[message.specId] = message.state;
+                        // Refresh the display to show updated status
+                        displayPage(currentState.currentPage);
+                    }
+                    break;
+                case 'executionHistoryUpdated':
+                    // Update execution history
+                    if (message.entries) {
+                        renderExecutionHistory(message.entries);
+                    }
+                    break;
+                case 'executionStatisticsUpdated':
+                    // Update execution statistics
+                    if (message.statistics) {
+                        renderExecutionStatistics(message.statistics);
+                    }
                     break;
                 case 'notesUpdated':
                     // Update notes for a specific spec without resetting dashboard state
@@ -1140,6 +2145,14 @@
                 });
             }
             
+            // Manage Profiles button click handler
+            const manageProfilesBtn = document.getElementById('manageProfilesBtn');
+            if (manageProfilesBtn) {
+                manageProfilesBtn.addEventListener('click', () => {
+                    vscode.postMessage({ type: 'openProfiles' });
+                });
+            }
+            
             itemsPerPageSelect.addEventListener('change', (e) => {
                 currentState.itemsPerPage = e.target.value === 'all' ? 'all' : parseInt(e.target.value);
                 currentState.currentPage = 1;
@@ -1241,6 +2254,72 @@
             // Show relative path from workspace root
             const relativePath = `.kiro/specs/${spec.name}`;
 
+            // Get execution state for this spec
+            const executionState = executionStates[spec.name] || null;
+            
+            // Build execution controls HTML
+            let executionControlsHTML = '';
+            if (executionState && executionState.status === 'running') {
+                // Show running status with progress and cancel button
+                const execProgress = `${executionState.completedTasks || 0}/${executionState.totalTasks || totalTasks}`;
+                executionControlsHTML = `
+                    <div class="execution-controls">
+                        <span class="execution-status running">
+                            <span class="codicon codicon-sync codicon-modifier-spin"></span>
+                            Running...
+                        </span>
+                        <span class="execution-progress">${escapeHtml(execProgress)} tasks</span>
+                        <button class="cancel-btn" data-spec-id="${escapeHtml(spec.name)}" data-execution-id="${escapeHtml(executionState.executionId)}" title="Cancel execution">
+                            <span class="codicon codicon-close"></span> Cancel
+                        </button>
+                    </div>
+                `;
+            } else if (executionState && executionState.status === 'completed') {
+                // Show completed status
+                executionControlsHTML = `
+                    <div class="execution-controls">
+                        <span class="execution-status completed">
+                            <span class="codicon codicon-check"></span>
+                            Completed
+                        </span>
+                    </div>
+                `;
+            } else if (executionState && executionState.status === 'failed') {
+                // Show failed status with error
+                const errorMsg = executionState.error ? `: ${executionState.error}` : '';
+                executionControlsHTML = `
+                    <div class="execution-controls">
+                        <span class="execution-status failed" title="${escapeHtml(errorMsg)}">
+                            <span class="codicon codicon-error"></span>
+                            Failed${escapeHtml(errorMsg)}
+                        </span>
+                    </div>
+                `;
+            } else if (executionState && executionState.status === 'cancelled') {
+                // Show cancelled status
+                executionControlsHTML = `
+                    <div class="execution-controls">
+                        <span class="execution-status cancelled">
+                            <span class="codicon codicon-circle-slash"></span>
+                            Cancelled
+                        </span>
+                    </div>
+                `;
+            } else {
+                // Show execution button with profile dropdown
+                executionControlsHTML = `
+                    <div class="execution-controls">
+                        <div class="execution-btn-wrapper">
+                            <button class="execution-btn" data-spec-id="${escapeHtml(spec.name)}" title="Execute spec with profile">
+                                <span class="codicon codicon-play"></span>
+                                Execute
+                                <span class="codicon codicon-chevron-down"></span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
             return `
                 <li class="spec-item">
                     <div class="spec-item-header">
@@ -1260,6 +2339,7 @@
                         </div>
                         ${optionalTasks > 0 ? `<div class="spec-stat"><span>${optionalTasks} optional</span></div>` : ''}
                     </div>
+                    ${executionControlsHTML}
                     <div class="spec-actions">
                         <button class="action-btn" data-spec="${escapeHtml(spec.name)}" data-file="requirements.md" title="Open requirements.md">
                             <span class="codicon codicon-file"></span> Requirements
@@ -1382,6 +2462,94 @@
                         openSpecFile(specName, fileName);
                     }
                 });
+            });
+
+            // Attach execution button listeners
+            const executionButtons = document.querySelectorAll('.execution-btn');
+            executionButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const specId = this.getAttribute('data-spec-id');
+                    showProfileDropdown(this, specId);
+                });
+            });
+
+            // Attach cancel button listeners
+            const cancelButtons = document.querySelectorAll('.cancel-btn');
+            cancelButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const executionId = this.getAttribute('data-execution-id');
+                    cancelExecution(executionId);
+                });
+            });
+        }
+        
+        // Show profile dropdown for execution
+        function showProfileDropdown(button, specId) {
+            // Close any existing dropdowns
+            closeAllDropdowns();
+
+            if (executionProfiles.length === 0) {
+                showError('No execution profiles available. Please create a profile first.');
+                return;
+            }
+
+            // Create dropdown
+            const dropdown = document.createElement('div');
+            dropdown.className = 'execution-dropdown';
+            dropdown.id = 'profile-dropdown';
+
+            // Populate with profiles
+            executionProfiles.forEach(profile => {
+                const item = document.createElement('div');
+                item.className = 'execution-dropdown-item';
+                item.innerHTML = `
+                    <span class="codicon codicon-${escapeHtml(profile.icon || 'rocket')}"></span>
+                    <span>${escapeHtml(profile.name)}</span>
+                `;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    executeSpec(specId, profile.id);
+                    closeAllDropdowns();
+                });
+                dropdown.appendChild(item);
+            });
+
+            // Position and show dropdown
+            const wrapper = button.parentElement;
+            wrapper.appendChild(dropdown);
+
+            // Close dropdown when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', closeAllDropdowns, { once: true });
+            }, 0);
+        }
+
+        // Close all dropdowns
+        function closeAllDropdowns() {
+            const dropdowns = document.querySelectorAll('.execution-dropdown');
+            dropdowns.forEach(dropdown => dropdown.remove());
+        }
+
+        // Execute a spec with a profile
+        function executeSpec(specId, profileId) {
+            console.log('Executing spec:', specId, 'with profile:', profileId);
+            
+            vscode.postMessage({
+                type: 'executeSpec',
+                specId: specId,
+                profileId: profileId
+            });
+        }
+
+        // Cancel an execution
+        function cancelExecution(executionId) {
+            console.log('Cancelling execution:', executionId);
+            
+            vscode.postMessage({
+                type: 'cancelExecution',
+                executionId: executionId
             });
         }
         
@@ -1598,6 +2766,861 @@
                 loadingContainer.innerHTML = '';
             }
         }
+
+        // ============================================================================
+        // Profile Settings UI Functions
+        // ============================================================================
+
+        let currentEditingProfileId = null;
+
+        /**
+         * Show the profile settings modal
+         * Requirements: 8.1, 8.6
+         */
+        function showProfileSettings() {
+            const modal = document.getElementById('profileSettingsModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                renderProfileList();
+            }
+        }
+
+        /**
+         * Hide the profile settings modal
+         */
+        function hideProfileSettings() {
+            const modal = document.getElementById('profileSettingsModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        /**
+         * Render the list of profiles in the settings modal
+         * Requirements: 8.1
+         */
+        function renderProfileList() {
+            const profileList = document.getElementById('profileList');
+            if (!profileList) return;
+
+            if (executionProfiles.length === 0) {
+                profileList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-text">No profiles available. Create your first profile to get started.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            profileList.innerHTML = executionProfiles.map(profile => {
+                const isBuiltIn = profile.isBuiltIn;
+                const deleteDisabled = isBuiltIn ? 'disabled' : '';
+                const builtInBadge = isBuiltIn ? '<span class="profile-badge">BUILT-IN</span>' : '';
+                
+                return `
+                    <li class="profile-item">
+                        <div class="profile-info">
+                            <span class="codicon codicon-${escapeHtml(profile.icon || 'rocket')} profile-icon"></span>
+                            <div class="profile-details">
+                                <div class="profile-name">
+                                    ${escapeHtml(profile.name)}
+                                    ${builtInBadge}
+                                </div>
+                                ${profile.description ? `<div class="profile-description">${escapeHtml(profile.description)}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="profile-actions">
+                            <button class="profile-action-btn" data-profile-id="${escapeHtml(profile.id)}" data-action="edit">
+                                <span class="codicon codicon-edit"></span>
+                                Edit
+                            </button>
+                            ${isBuiltIn ? `
+                            <button class="profile-action-btn" data-profile-id="${escapeHtml(profile.id)}" data-action="reset" title="Reset to default template">
+                                <span class="codicon codicon-discard"></span>
+                                Reset
+                            </button>
+                            ` : ''}
+                            <button class="profile-action-btn" data-profile-id="${escapeHtml(profile.id)}" data-action="delete" ${deleteDisabled} title="${isBuiltIn ? 'Built-in profiles cannot be deleted' : 'Delete profile'}">
+                                <span class="codicon codicon-trash"></span>
+                                Delete
+                            </button>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+
+            // Attach event listeners to profile action buttons
+            attachProfileActionListeners();
+        }
+
+        /**
+         * Attach event listeners to profile action buttons
+         */
+        function attachProfileActionListeners() {
+            const actionButtons = document.querySelectorAll('.profile-action-btn');
+            actionButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const profileId = this.getAttribute('data-profile-id');
+                    const action = this.getAttribute('data-action');
+                    
+                    if (action === 'edit') {
+                        editProfile(profileId);
+                    } else if (action === 'delete') {
+                        deleteProfile(profileId);
+                    } else if (action === 'reset') {
+                        resetBuiltInProfile(profileId);
+                    }
+                });
+            });
+        }
+
+        /**
+         * Show the profile form modal for creating a new profile
+         * Requirements: 8.2
+         */
+        function showCreateProfileForm() {
+            currentEditingProfileId = null;
+            const modal = document.getElementById('profileFormModal');
+            const title = document.getElementById('profileFormTitle');
+            const form = document.getElementById('profileForm');
+            
+            if (title) title.textContent = 'Create Profile';
+            if (form) form.reset();
+            
+            // Clear any error messages
+            clearFormErrors();
+            
+            if (modal) modal.style.display = 'flex';
+        }
+
+        /**
+         * Show the profile form modal for editing an existing profile
+         * Requirements: 8.4
+         */
+        function editProfile(profileId) {
+            const profile = executionProfiles.find(p => p.id === profileId);
+            if (!profile) {
+                showError('Profile not found');
+                return;
+            }
+
+            currentEditingProfileId = profileId;
+            const modal = document.getElementById('profileFormModal');
+            const title = document.getElementById('profileFormTitle');
+            const form = document.getElementById('profileForm');
+            
+            if (title) title.textContent = 'Edit Profile';
+            
+            // Pre-fill form with profile data
+            const nameInput = document.getElementById('profileName');
+            const iconSelect = document.getElementById('profileIcon');
+            const descriptionInput = document.getElementById('profileDescription');
+            const templateTextarea = document.getElementById('profileTemplate');
+            
+            if (nameInput) nameInput.value = profile.name;
+            if (iconSelect) iconSelect.value = profile.icon || 'rocket';
+            if (descriptionInput) descriptionInput.value = profile.description || '';
+            if (templateTextarea) templateTextarea.value = profile.promptTemplate;
+            
+            // Update icon preview
+            updateIconPreview(profile.icon || 'rocket');
+            
+            // Clear any error messages
+            clearFormErrors();
+            
+            if (modal) modal.style.display = 'flex';
+        }
+
+        /**
+         * Delete a profile
+         * Requirements: 8.6
+         */
+        function deleteProfile(profileId) {
+            const profile = executionProfiles.find(p => p.id === profileId);
+            if (!profile) {
+                showError('Profile not found');
+                return;
+            }
+
+            // Prevent deletion of built-in profiles
+            if (profile.isBuiltIn) {
+                showError('Built-in profiles cannot be deleted');
+                return;
+            }
+
+            // Confirm deletion
+            if (!confirm(`Are you sure you want to delete the profile "${profile.name}"?`)) {
+                return;
+            }
+
+            // Send delete message to extension
+            vscode.postMessage({
+                type: 'deleteProfile',
+                profileId: profileId
+            });
+        }
+
+        /**
+         * Reset a built-in profile to its default template
+         * Requirements: 3.5
+         */
+        function resetBuiltInProfile(profileId) {
+            const profile = executionProfiles.find(p => p.id === profileId);
+            if (!profile) {
+                showError('Profile not found');
+                return;
+            }
+
+            // Only allow resetting built-in profiles
+            if (!profile.isBuiltIn) {
+                showError('Only built-in profiles can be reset');
+                return;
+            }
+
+            // Confirm reset
+            if (!confirm(`Are you sure you want to reset "${profile.name}" to its default template? Any customizations will be lost.`)) {
+                return;
+            }
+
+            // Send reset message to extension
+            vscode.postMessage({
+                type: 'resetBuiltInProfile',
+                profileId: profileId
+            });
+        }
+
+        /**
+         * Hide the profile form modal
+         */
+        function hideProfileForm() {
+            const modal = document.getElementById('profileFormModal');
+            if (modal) modal.style.display = 'none';
+            currentEditingProfileId = null;
+        }
+
+        /**
+         * Validate the profile form
+         * Requirements: 8.2
+         */
+        function validateProfileForm() {
+            let isValid = true;
+            clearFormErrors();
+
+            const nameInput = document.getElementById('profileName');
+            const templateTextarea = document.getElementById('profileTemplate');
+
+            // Validate name
+            if (!nameInput || !nameInput.value.trim()) {
+                showFormError('profileNameError', 'Profile name is required');
+                isValid = false;
+            }
+
+            // Validate template
+            if (!templateTextarea || !templateTextarea.value.trim()) {
+                showFormError('profileTemplateError', 'Prompt template is required');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        /**
+         * Show a form validation error
+         */
+        function showFormError(errorId, message) {
+            const errorElement = document.getElementById(errorId);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        /**
+         * Clear all form validation errors
+         */
+        function clearFormErrors() {
+            const errorElements = document.querySelectorAll('.form-error');
+            errorElements.forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+        }
+
+        /**
+         * Save the profile (create or update)
+         * Requirements: 8.2, 8.4
+         */
+        function saveProfile() {
+            if (!validateProfileForm()) {
+                return;
+            }
+
+            const nameInput = document.getElementById('profileName');
+            const iconSelect = document.getElementById('profileIcon');
+            const descriptionInput = document.getElementById('profileDescription');
+            const templateTextarea = document.getElementById('profileTemplate');
+
+            const profileData = {
+                name: nameInput.value.trim(),
+                icon: iconSelect.value,
+                description: descriptionInput.value.trim(),
+                promptTemplate: templateTextarea.value.trim()
+            };
+
+            if (currentEditingProfileId) {
+                // Update existing profile
+                vscode.postMessage({
+                    type: 'updateProfile',
+                    profileId: currentEditingProfileId,
+                    updates: profileData
+                });
+            } else {
+                // Create new profile
+                const newProfile = {
+                    id: generateProfileId(profileData.name),
+                    ...profileData,
+                    isBuiltIn: false,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+
+                vscode.postMessage({
+                    type: 'createProfile',
+                    profile: newProfile
+                });
+            }
+
+            hideProfileForm();
+        }
+
+        /**
+         * Generate a profile ID from a name
+         */
+        function generateProfileId(name) {
+            return name.toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        /**
+         * Update the icon preview
+         */
+        function updateIconPreview(iconName) {
+            const preview = document.getElementById('iconPreview');
+            if (preview) {
+                preview.className = `codicon codicon-${iconName} icon-preview-icon`;
+            }
+        }
+
+        // ============================================================================
+        // Profile Settings Event Listeners
+        // ============================================================================
+
+        // Close profile settings modal
+        const closeProfileSettingsBtn = document.getElementById('closeProfileSettingsBtn');
+        if (closeProfileSettingsBtn) {
+            closeProfileSettingsBtn.addEventListener('click', hideProfileSettings);
+        }
+
+        // Create profile button
+        const createProfileBtn = document.getElementById('createProfileBtn');
+        if (createProfileBtn) {
+            createProfileBtn.addEventListener('click', showCreateProfileForm);
+        }
+
+        // Close profile form modal
+        const closeProfileFormBtn = document.getElementById('closeProfileFormBtn');
+        if (closeProfileFormBtn) {
+            closeProfileFormBtn.addEventListener('click', hideProfileForm);
+        }
+
+        // Cancel profile form
+        const cancelProfileFormBtn = document.getElementById('cancelProfileFormBtn');
+        if (cancelProfileFormBtn) {
+            cancelProfileFormBtn.addEventListener('click', hideProfileForm);
+        }
+
+        // Save profile button
+        const saveProfileBtn = document.getElementById('saveProfileBtn');
+        if (saveProfileBtn) {
+            saveProfileBtn.addEventListener('click', saveProfile);
+        }
+
+        // Icon select change handler
+        const profileIconSelect = document.getElementById('profileIcon');
+        if (profileIconSelect) {
+            profileIconSelect.addEventListener('change', function() {
+                updateIconPreview(this.value);
+            });
+        }
+
+        // Close modals when clicking outside
+        const profileSettingsModal = document.getElementById('profileSettingsModal');
+        if (profileSettingsModal) {
+            profileSettingsModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    hideProfileSettings();
+                }
+            });
+        }
+
+        const profileFormModal = document.getElementById('profileFormModal');
+        if (profileFormModal) {
+            profileFormModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    hideProfileForm();
+                }
+            });
+        }
+
+        // Handle Enter key in form inputs (except textarea)
+        const profileForm = document.getElementById('profileForm');
+        if (profileForm) {
+            profileForm.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    saveProfile();
+                }
+            });
+        }
+
+        // ============================================================================
+        // Execution History UI Functions
+        // ============================================================================
+
+        let executionHistory = [];
+        let filteredHistory = [];
+
+        /**
+         * Show the execution history modal
+         * Requirements: 6.4, 6.5, 6.6
+         */
+        function showExecutionHistory() {
+            const modal = document.getElementById('executionHistoryModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                
+                // Request history and statistics from extension
+                vscode.postMessage({ type: 'getExecutionHistory' });
+                vscode.postMessage({ type: 'getExecutionStatistics' });
+                
+                // Show list view, hide detail view
+                showHistoryListView();
+            }
+        }
+
+        /**
+         * Hide the execution history modal
+         */
+        function hideExecutionHistory() {
+            const modal = document.getElementById('executionHistoryModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        /**
+         * Show the history list view
+         */
+        function showHistoryListView() {
+            const listView = document.getElementById('historyListView');
+            const detailView = document.getElementById('historyDetailView');
+            
+            if (listView) listView.style.display = 'block';
+            if (detailView) detailView.style.display = 'none';
+        }
+
+        /**
+         * Show the history detail view
+         */
+        function showHistoryDetailView() {
+            const listView = document.getElementById('historyListView');
+            const detailView = document.getElementById('historyDetailView');
+            
+            if (listView) listView.style.display = 'none';
+            if (detailView) detailView.style.display = 'block';
+        }
+
+        /**
+         * Render the execution history list
+         * Requirements: 6.4
+         */
+        function renderExecutionHistory(entries) {
+            executionHistory = entries || [];
+            
+            // Populate filter dropdowns
+            populateHistoryFilters();
+            
+            // Apply filters
+            applyHistoryFilters();
+        }
+
+        /**
+         * Render execution statistics
+         * Requirements: 6.6
+         */
+        function renderExecutionStatistics(statistics) {
+            const statsContainer = document.getElementById('historyStatistics');
+            if (!statsContainer) return;
+
+            // Show statistics container
+            statsContainer.style.display = 'block';
+
+            // Update overall statistics
+            const totalExecutions = document.getElementById('statTotalExecutions');
+            const successRate = document.getElementById('statSuccessRate');
+            const avgDuration = document.getElementById('statAvgDuration');
+
+            if (totalExecutions) totalExecutions.textContent = statistics.totalExecutions || 0;
+            if (successRate) successRate.textContent = (statistics.successRate || 0).toFixed(1);
+            if (avgDuration) avgDuration.textContent = formatDuration(statistics.averageDuration || 0);
+
+            // Render per-spec statistics
+            const perSpecSection = document.getElementById('perSpecStatsSection');
+            const perSpecBody = document.getElementById('perSpecStatsBody');
+            
+            if (perSpecBody && statistics.bySpec && Object.keys(statistics.bySpec).length > 0) {
+                perSpecSection.style.display = 'block';
+                
+                const specRows = Object.entries(statistics.bySpec)
+                    .sort((a, b) => b[1].totalExecutions - a[1].totalExecutions)
+                    .map(([specId, stats]) => `
+                        <tr>
+                            <td>${escapeHtml(stats.specName)}</td>
+                            <td>${stats.totalExecutions}</td>
+                            <td>${stats.successCount}</td>
+                            <td>${stats.failureCount}</td>
+                            <td>${formatDuration(stats.averageDuration)}</td>
+                        </tr>
+                    `).join('');
+                
+                perSpecBody.innerHTML = specRows;
+            } else if (perSpecSection) {
+                perSpecSection.style.display = 'none';
+            }
+
+            // Render per-profile statistics
+            const perProfileSection = document.getElementById('perProfileStatsSection');
+            const perProfileBody = document.getElementById('perProfileStatsBody');
+            
+            if (perProfileBody && statistics.byProfile && Object.keys(statistics.byProfile).length > 0) {
+                perProfileSection.style.display = 'block';
+                
+                const profileRows = Object.entries(statistics.byProfile)
+                    .sort((a, b) => b[1].totalExecutions - a[1].totalExecutions)
+                    .map(([profileId, stats]) => `
+                        <tr>
+                            <td>${escapeHtml(stats.profileName)}</td>
+                            <td>${stats.totalExecutions}</td>
+                            <td>${stats.successCount}</td>
+                            <td>${stats.failureCount}</td>
+                            <td>${formatDuration(stats.averageDuration)}</td>
+                        </tr>
+                    `).join('');
+                
+                perProfileBody.innerHTML = profileRows;
+            } else if (perProfileSection) {
+                perProfileSection.style.display = 'none';
+            }
+        }
+
+        /**
+         * Populate the history filter dropdowns
+         */
+        function populateHistoryFilters() {
+            const specFilter = document.getElementById('historySpecFilter');
+            const profileFilter = document.getElementById('historyProfileFilter');
+            
+            if (!specFilter || !profileFilter) return;
+
+            // Get unique spec names
+            const specNames = [...new Set(executionHistory.map(e => e.specName))].sort();
+            specFilter.innerHTML = '<option value="">All Specs</option>' + 
+                specNames.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+
+            // Get unique profile names
+            const profileNames = [...new Set(executionHistory.map(e => e.profileName))].sort();
+            profileFilter.innerHTML = '<option value="">All Profiles</option>' + 
+                profileNames.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+        }
+
+        /**
+         * Apply filters to the history list
+         * Requirements: 6.6
+         */
+        function applyHistoryFilters() {
+            const specFilter = document.getElementById('historySpecFilter');
+            const profileFilter = document.getElementById('historyProfileFilter');
+            const statusFilter = document.getElementById('historyStatusFilter');
+            
+            const specValue = specFilter ? specFilter.value : '';
+            const profileValue = profileFilter ? profileFilter.value : '';
+            const statusValue = statusFilter ? statusFilter.value : '';
+
+            // Filter history entries
+            filteredHistory = executionHistory.filter(entry => {
+                if (specValue && entry.specName !== specValue) return false;
+                if (profileValue && entry.profileName !== profileValue) return false;
+                if (statusValue && entry.status !== statusValue) return false;
+                return true;
+            });
+
+            // Sort by timestamp (most recent first) - Requirement 6.4
+            filteredHistory.sort((a, b) => {
+                const timeA = new Date(a.startTime).getTime();
+                const timeB = new Date(b.startTime).getTime();
+                return timeB - timeA;
+            });
+
+            // Render the filtered list
+            renderHistoryList();
+        }
+
+        /**
+         * Render the history list
+         * Requirements: 6.4
+         */
+        function renderHistoryList() {
+            const historyList = document.getElementById('historyList');
+            const emptyState = document.getElementById('historyEmptyState');
+            
+            if (!historyList || !emptyState) return;
+
+            if (filteredHistory.length === 0) {
+                historyList.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            
+            historyList.innerHTML = filteredHistory.map(entry => {
+                const startTime = formatDateTime(entry.startTime);
+                const duration = entry.duration ? formatDuration(entry.duration) : 'N/A';
+                
+                // Status badge
+                let statusBadgeHTML = '';
+                switch (entry.status) {
+                    case 'running':
+                        statusBadgeHTML = '<span class="history-status-badge running"><span class="codicon codicon-sync"></span> Running</span>';
+                        break;
+                    case 'completed':
+                        statusBadgeHTML = '<span class="history-status-badge completed"><span class="codicon codicon-check"></span> Completed</span>';
+                        break;
+                    case 'failed':
+                        statusBadgeHTML = '<span class="history-status-badge failed"><span class="codicon codicon-error"></span> Failed</span>';
+                        break;
+                    case 'cancelled':
+                        statusBadgeHTML = '<span class="history-status-badge cancelled"><span class="codicon codicon-circle-slash"></span> Cancelled</span>';
+                        break;
+                }
+
+                return `
+                    <li class="history-item" data-execution-id="${escapeHtml(entry.executionId)}">
+                        <div class="history-item-main">
+                            <div class="history-item-header">
+                                <span class="history-spec-name">${escapeHtml(entry.specName)}</span>
+                                ${statusBadgeHTML}
+                            </div>
+                            <div class="history-profile-name">Profile: ${escapeHtml(entry.profileName)}</div>
+                            <div class="history-item-meta">
+                                <span>${startTime}</span>
+                                <span>Duration: ${duration}</span>
+                                <span>${entry.completedTasks}/${entry.totalTasks} tasks</span>
+                            </div>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+
+            // Attach click handlers
+            attachHistoryItemListeners();
+        }
+
+        /**
+         * Attach click handlers to history items
+         */
+        function attachHistoryItemListeners() {
+            const historyItems = document.querySelectorAll('.history-item');
+            historyItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const executionId = this.getAttribute('data-execution-id');
+                    showHistoryEntryDetail(executionId);
+                });
+            });
+        }
+
+        /**
+         * Show detail view for a history entry
+         * Requirements: 6.5
+         */
+        function showHistoryEntryDetail(executionId) {
+            const entry = executionHistory.find(e => e.executionId === executionId);
+            if (!entry) return;
+
+            const detailContent = document.getElementById('historyDetailContent');
+            if (!detailContent) return;
+
+            const startTime = formatDateTime(entry.startTime);
+            const endTime = entry.endTime ? formatDateTime(entry.endTime) : 'N/A';
+            const duration = entry.duration ? formatDuration(entry.duration) : 'N/A';
+            
+            // Status badge
+            let statusBadgeHTML = '';
+            switch (entry.status) {
+                case 'running':
+                    statusBadgeHTML = '<span class="history-status-badge running"><span class="codicon codicon-sync"></span> Running</span>';
+                    break;
+                case 'completed':
+                    statusBadgeHTML = '<span class="history-status-badge completed"><span class="codicon codicon-check"></span> Completed</span>';
+                    break;
+                case 'failed':
+                    statusBadgeHTML = '<span class="history-status-badge failed"><span class="codicon codicon-error"></span> Failed</span>';
+                    break;
+                case 'cancelled':
+                    statusBadgeHTML = '<span class="history-status-badge cancelled"><span class="codicon codicon-circle-slash"></span> Cancelled</span>';
+                    break;
+            }
+
+            // Error section (only for failed executions)
+            const errorHTML = entry.error ? `
+                <div class="history-detail-section">
+                    <div class="history-detail-label">Error</div>
+                    <div class="history-detail-error">${escapeHtml(entry.error)}</div>
+                </div>
+            ` : '';
+
+            detailContent.innerHTML = `
+                <div class="history-detail-section">
+                    <div class="history-detail-label">Spec</div>
+                    <div class="history-detail-value">${escapeHtml(entry.specName)}</div>
+                </div>
+
+                <div class="history-detail-section">
+                    <div class="history-detail-label">Profile</div>
+                    <div class="history-detail-value">${escapeHtml(entry.profileName)}</div>
+                </div>
+
+                <div class="history-detail-section">
+                    <div class="history-detail-label">Workspace Folder</div>
+                    <div class="history-detail-value">${escapeHtml(entry.workspaceFolder || 'N/A')}</div>
+                </div>
+
+                <div class="history-detail-section">
+                    <div class="history-detail-label">Status</div>
+                    <div class="history-detail-value">${statusBadgeHTML}</div>
+                </div>
+
+                <div class="history-detail-section">
+                    <div class="history-detail-label">Start Time</div>
+                    <div class="history-detail-value">${startTime}</div>
+                </div>
+
+                <div class="history-detail-section">
+                    <div class="history-detail-label">End Time</div>
+                    <div class="history-detail-value">${endTime}</div>
+                </div>
+
+                <div class="history-detail-section">
+                    <div class="history-detail-label">Duration</div>
+                    <div class="history-detail-value">${duration}</div>
+                </div>
+
+                <div class="history-detail-section">
+                    <div class="history-detail-label">Task Progress</div>
+                    <div class="history-detail-value">${entry.completedTasks} / ${entry.totalTasks} tasks completed</div>
+                </div>
+
+                ${errorHTML}
+            `;
+
+            showHistoryDetailView();
+        }
+
+        /**
+         * Format a date/time string for display
+         */
+        function formatDateTime(isoString) {
+            if (!isoString) return 'N/A';
+            
+            try {
+                const date = new Date(isoString);
+                return date.toLocaleString();
+            } catch (error) {
+                return isoString;
+            }
+        }
+
+        /**
+         * Format a duration in milliseconds for display
+         */
+        function formatDuration(ms) {
+            if (!ms || ms < 0) return 'N/A';
+            
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${seconds % 60}s`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+
+        // ============================================================================
+        // Execution History Event Listeners
+        // ============================================================================
+
+        // Execution History button click handler
+        const executionHistoryBtn = document.getElementById('executionHistoryBtn');
+        if (executionHistoryBtn) {
+            executionHistoryBtn.addEventListener('click', () => {
+                vscode.postMessage({ type: 'openHistory' });
+            });
+        }
+
+        // Close execution history modal
+        const closeExecutionHistoryBtn = document.getElementById('closeExecutionHistoryBtn');
+        if (closeExecutionHistoryBtn) {
+            closeExecutionHistoryBtn.addEventListener('click', hideExecutionHistory);
+        }
+
+        // Back to history list button
+        const backToHistoryListBtn = document.getElementById('backToHistoryListBtn');
+        if (backToHistoryListBtn) {
+            backToHistoryListBtn.addEventListener('click', showHistoryListView);
+        }
+
+        // History filter change handlers
+        const historySpecFilter = document.getElementById('historySpecFilter');
+        if (historySpecFilter) {
+            historySpecFilter.addEventListener('change', applyHistoryFilters);
+        }
+
+        const historyProfileFilter = document.getElementById('historyProfileFilter');
+        if (historyProfileFilter) {
+            historyProfileFilter.addEventListener('change', applyHistoryFilters);
+        }
+
+        const historyStatusFilter = document.getElementById('historyStatusFilter');
+        if (historyStatusFilter) {
+            historyStatusFilter.addEventListener('change', applyHistoryFilters);
+        }
+
+        // Close execution history modal when clicking outside
+        const executionHistoryModal = document.getElementById('executionHistoryModal');
+        if (executionHistoryModal) {
+            executionHistoryModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    hideExecutionHistory();
+                }
+            });
+        }
+
     </script>
     
     <!-- External Libraries for Markdown Rendering -->

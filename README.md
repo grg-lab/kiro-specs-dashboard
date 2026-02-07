@@ -133,18 +133,19 @@ This extension provides the following commands:
 
 ### User Commands
 
-- **Kiro: Show Specs Dashboard** (`specs-dashboard.show`) - Open the Specs Dashboard view
-- **Kiro: Refresh Specs Dashboard** (`specs-dashboard.refresh`) - Manually refresh the dashboard data
-- **Kiro: Open Spec File** (`specs-dashboard.openFile`) - Open a specific spec file (requirements, design, or tasks)
+- **Specs Dashboard: Show Specs Dashboard** (`specs-dashboard.show`) - Open the Specs Dashboard view
+- **Specs Dashboard: Refresh Specs Dashboard** (`specs-dashboard.refresh`) - Manually refresh the dashboard data
+- **Specs Dashboard: Manage Profiles** (`specs-dashboard.openProfiles`) - Open the profile management panel to create and edit execution profiles
+- **Specs Dashboard: Show Metrics** (`specs-dashboard.openAnalytics`) - Open the Metrics panel to view velocity tracking and analytics
 
 ### Development Commands
 
-- **Kiro: Generate Mock Velocity Data** (`specs-dashboard.generateMockData`) - Generate realistic mock velocity data for testing the Metrics panel
+- **Specs Dashboard: Generate Mock Velocity Data** (`specs-dashboard.generateMockData`) - Generate realistic mock velocity data for testing the Metrics panel
   - Creates 12 weeks of mock task and spec completion data
   - Useful for testing and demonstrating the analytics features
   - Data includes weekly trends, day-of-week patterns, and spec lifecycle events
   - See `mocks/README.md` for more details on the mock data structure
-- **Kiro: Clear Velocity Data** (`specs-dashboard.clearVelocityData`) - Clear all velocity tracking data
+- **Specs Dashboard: Clear Velocity Data** (`specs-dashboard.clearVelocityData`) - Clear all velocity tracking data
   - Removes all velocity metrics and analytics data
   - Useful for resetting analytics or removing mock data
   - Shows confirmation dialog before clearing

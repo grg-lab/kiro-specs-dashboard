@@ -5,6 +5,44 @@ All notable changes to the "Kiro Specs Dashboard" extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-02-06
+
+### Added
+
+- **Execution Profiles**: Create and manage custom execution profiles for automated spec execution
+  - Built-in profiles: MVP (Required Tasks) and Full (All Tasks)
+  - Custom profile creation with template variables ({{specName}}, {{specPath}}, {{totalTasks}}, etc.)
+  - Profile management UI accessible via "Manage Profiles" button
+  - Multi-workspace support with automatic profile ID conflict resolution
+  - File-based profile storage in `.kiro/execution-profiles.json`
+- **Direct Spec Execution**: Execute specs directly from the dashboard
+  - Execute button on each spec card with profile selection dropdown
+  - Real-time execution status indicators (Running, Completed, Failed, Cancelled)
+  - Cancel execution button to stop running executions
+  - Automatic task file watching for progress updates during execution
+  - Execution state persistence across VSCode sessions
+- **New Commands**:
+  - `Specs Dashboard: Manage Profiles` - Open profile management panel
+  - `Specs Dashboard: Show Metrics` - Open the Metrics panel
+
+### Changed
+
+- Enhanced dashboard header with Profiles action button
+- Improved spec card layout with execution controls section
+- Updated dashboard UI to show execution status on spec cards
+- **Command Category Update**: Changed all command categories from "Kiro" to "Specs Dashboard" for consistency
+- **Removed Commands**: Removed internal and debug commands (openFile, openNotes, openHistory, listKiroCommands, testKiroMessage)
+
+### Technical
+
+- Added `ProfileManager` class for profile CRUD operations
+- Added `ExecutionManager` class for execution lifecycle management
+- Added `ProfilesPanelManager` for profile management webview
+- Implemented template variable substitution engine
+- Added workspace state persistence for execution states
+- Implemented file system watching for task progress during execution
+- Added profile validation and error handling
+
 ## [0.1.1] - 2026-02-05
 
 ### Added
@@ -131,5 +169,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **0.1.2** (2026-02-06) - Fixed execution cancellation to actually stop Kiro agent
 - **0.1.1** (2026-02-05) - Added Metrics panel with velocity tracking and analytics
 - **0.1.0** (2026-01-31) - Initial release with core functionality

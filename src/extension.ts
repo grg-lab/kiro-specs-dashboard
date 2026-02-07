@@ -1,6 +1,11 @@
 import * as vscode from 'vscode';
 import { SpecsDashboardProvider } from './specsDashboardProvider';
 import { generateMockVelocityData } from './mockDataGenerator';
+import { ProfileManager } from './profileManager';
+import { ExecutionManager } from './executionManager';
+import { ExecutionHistory } from './executionHistory';
+import { ProfilesPanelManager } from './profilesPanelManager';
+import { HistoryPanelManager } from './historyPanelManager';
 
 /**
  * Extension activation function
@@ -9,8 +14,60 @@ import { generateMockVelocityData } from './mockDataGenerator';
 export function activate(context: vscode.ExtensionContext): void {
   console.log('Kiro Specs Dashboard extension is now active');
 
-  // Create the dashboard provider
+  // Create output channel for execution managers
+  const executionOutputChannel = vscode.window.createOutputChannel('Specs Execution');
+  context.subscriptions.push(executionOutputChannel);
+
+  // Create the dashboard provider first (it creates StateManager)
   const provider = new SpecsDashboardProvider(context);
+
+  // Initialize execution managers with StateManager from provider
+  // Requirements: 1.1, 11.4
+  const profileManager = new ProfileManager(executionOutputChannel);
+  const executionHistory = new ExecutionHistory(context.workspaceState, executionOutputChannel);
+  const executionManager = new ExecutionManager(
+    executionOutputChannel,
+    profileManager,
+    provider.getStateManager()
+  );
+
+  // Set execution history reference in execution manager
+  // This allows the manager to update history entries with progress
+  executionManager.setExecutionHistory(executionHistory);
+
+  // Create panel managers
+  // Requirements: 7.1, 7.5, 7.6
+  const profilesPanelManager = new ProfilesPanelManager(
+    context,
+    profileManager,
+    executionOutputChannel
+  );
+  const historyPanelManager = new HistoryPanelManager(
+    context,
+    executionHistory,
+    executionOutputChannel
+  );
+
+  // Add panel managers to subscriptions for disposal
+  // Requirements: 7.4
+  context.subscriptions.push(profilesPanelManager, historyPanelManager);
+
+  // Inject managers into provider
+  provider.setExecutionManagers(profileManager, executionManager, executionHistory);
+  
+  // Inject panel managers into provider
+  // Requirements: 7.3
+  provider.setProfilesPanelManager(profilesPanelManager);
+  provider.setHistoryPanelManager(historyPanelManager);
+
+  // Wire up execution state change callback to notify webview
+  // Requirements: 5.1, 5.2, 5.3, 7.1
+  executionManager.onStateChanged((specId, state) => {
+    provider.notifyExecutionStateChanged(specId, state);
+  });
+
+  // Add execution manager to subscriptions for proper disposal
+  context.subscriptions.push(executionManager);
 
   // Register the webview view provider
   const providerRegistration = vscode.window.registerWebviewViewProvider(
@@ -43,25 +100,6 @@ export function activate(context: vscode.ExtensionContext): void {
     'specs-dashboard.refresh',
     () => {
       provider.refresh();
-    }
-  );
-
-  const openFileCommand = vscode.commands.registerCommand(
-    'specs-dashboard.openFile',
-    async (filePath: string) => {
-      if (filePath) {
-        const uri = vscode.Uri.file(filePath);
-        await vscode.window.showTextDocument(uri);
-      }
-    }
-  );
-
-  const openNotesCommand = vscode.commands.registerCommand(
-    'specs-dashboard.openNotes',
-    async (specName: string) => {
-      if (specName) {
-        await provider.openNotesPanel(specName);
-      }
     }
   );
 
@@ -101,6 +139,22 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   );
 
+  // Register panel manager commands
+  // Requirements: 8.1, 8.2, 8.3, 8.4
+  const openProfilesCommand = vscode.commands.registerCommand(
+    'specs-dashboard.openProfiles',
+    async () => {
+      await profilesPanelManager.openProfiles();
+    }
+  );
+
+  const openAnalyticsCommand = vscode.commands.registerCommand(
+    'specs-dashboard.openAnalytics',
+    async () => {
+      await provider.getAnalyticsPanelManager().openAnalytics(provider.getSpecs());
+    }
+  );
+
   // Set up file system watcher for spec files with debouncing
   const watcher = vscode.workspace.createFileSystemWatcher(
     '**/.kiro/specs/**/*.md'
@@ -134,6 +188,28 @@ export function activate(context: vscode.ExtensionContext): void {
   watcher.onDidCreate((uri) => debouncedRefresh(uri));
   watcher.onDidDelete((uri) => debouncedRefresh(uri));
 
+  // Set up file system watcher for execution profiles
+  // Requirements: 11.4 (detect external changes to profiles file)
+  const profilesWatcher = vscode.workspace.createFileSystemWatcher(
+    '**/.kiro/execution-profiles.json'
+  );
+
+  /**
+   * Handle external changes to execution profiles file
+   * Notifies the dashboard provider to reload profiles
+   */
+  const handleProfilesChange = (uri: vscode.Uri) => {
+    executionOutputChannel.appendLine(
+      `[${new Date().toISOString()}] Execution profiles file changed: ${uri.fsPath}`
+    );
+    // Notify provider to reload profiles
+    provider.onProfilesFileChanged(uri);
+  };
+
+  profilesWatcher.onDidChange(handleProfilesChange);
+  profilesWatcher.onDidCreate(handleProfilesChange);
+  profilesWatcher.onDidDelete(handleProfilesChange);
+
   // Handle workspace folder changes for multi-root workspace support
   // Requirements: 12.2, 12.3 (clean up watchers and state when workspaces are removed)
   const workspaceFoldersChangeListener = vscode.workspace.onDidChangeWorkspaceFolders(async (event) => {
@@ -158,11 +234,12 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     showDashboardCommand,
     refreshCommand,
-    openFileCommand,
-    openNotesCommand,
     generateMockDataCommand,
     clearVelocityDataCommand,
+    openProfilesCommand,
+    openAnalyticsCommand,
     watcher,
+    profilesWatcher,
     workspaceFoldersChangeListener,
     // Dispose of debounce timer on deactivation
     new vscode.Disposable(() => {
@@ -179,8 +256,8 @@ export function activate(context: vscode.ExtensionContext): void {
  * Called when the extension is deactivated
  * 
  * All resources are automatically disposed via the context.subscriptions array:
- * - Commands (showDashboardCommand, refreshCommand, openFileCommand)
- * - File system watcher
+ * - Commands (showDashboardCommand, refreshCommand, generateMockDataCommand, etc.)
+ * - File system watchers
  * - Workspace folders change listener
  * - Debounce timer disposable
  * - Webview provider registration

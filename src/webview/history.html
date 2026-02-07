@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'none'; 
+                   style-src {{cspSource}} 'unsafe-inline'; 
+                   script-src 'nonce-{{nonce}}'; 
+                   font-src {{cspSource}};">
+    <link rel="stylesheet" href="{{codiconsUri}}">
+    <title>Execution History - Kiro Specs Dashboard</title>
+    <style nonce="{{nonce}}">
+        /* Native IDE Styling - VSCode Design System */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--vscode-font-family);
+            font-size: 13px;
+            color: var(--vscode-foreground);
+            background: var(--vscode-editor-background);
+            line-height: 1.4;
+            overflow-x: hidden;
+        }
+
+        .history-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-sideBarSectionHeader-background);
+        }
+
+        .history-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .clear-history-btn {
+            padding: 6px 14px;
+            background: transparent;
+            color: var(--vscode-errorForeground);
+            border: 1px solid var(--vscode-errorForeground);
+            border-radius: 2px;
+            cursor: pointer;
+            font-family: var(--vscode-font-family);
+            font-size: 12px;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .clear-history-btn:hover {
+            background: var(--vscode-statusBarItem-errorBackground);
+        }
+
+        .clear-history-btn:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        /* Content Area */
+        .history-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* Statistics Section */
+        .statistics-section {
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 2px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .statistics-header {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            margin-bottom: 12px;
+        }
+
+        .statistics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 2px;
+            padding: 12px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .stat-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        .stat-table th,
+        .stat-table td {
+            text-align: left;
+            padding: 6px 8px;
+            font-size: 11px;
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+
+        .stat-table th {
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            background: var(--vscode-editor-background);
+        }
+
+        .stat-table td {
+            color: var(--vscode-descriptionForeground);
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 2px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .filter-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .filter-toggle {
+            padding: 4px 8px;
+            background: transparent;
+            color: var(--vscode-foreground);
+            border: none;
+            cursor: pointer;
+            font-family: var(--vscode-font-family);
+            font-size: 11px;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .filter-toggle:hover {
+            background: var(--vscode-toolbar-hoverBackground);
+        }
+
+        .filter-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .filter-form.collapsed {
+            display: none;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+            margin-bottom: 4px;
+        }
+
+        .filter-input,
+        .filter-select {
+            padding: 4px 6px;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 12px;
+            outline: none;
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+            grid-column: 1 / -1;
+            justify-content: flex-end;
+        }
+
+        .filter-btn {
+            padding: 6px 14px;
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            font-family: var(--vscode-font-family);
+            font-size: 12px;
+            outline: none;
+        }
+
+        .filter-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .filter-btn.secondary {
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+        }
+
+        .filter-btn.secondary:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        /* History List */
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border: 1px solid var(--vscode-panel-border);
+            background: var(--vscode-sideBar-background);
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .history-item:hover {
+            background: var(--vscode-list-hoverBackground);
+        }
+
+        .history-info {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .history-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field-label {
+            font-size: 10px;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 2px;
+        }
+
+        .field-value {
+            font-size: 12px;
+            color: var(--vscode-foreground);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 2px;
+        }
+
+        .status-badge.running {
+            background: var(--vscode-statusBarItem-warningBackground);
+            color: var(--vscode-statusBarItem-warningForeground);
+        }
+
+        .status-badge.completed {
+            background: var(--vscode-testing-iconPassed);
+            color: var(--vscode-button-foreground);
+        }
+
+        .status-badge.failed {
+            background: var(--vscode-statusBarItem-errorBackground);
+            color: var(--vscode-statusBarItem-errorForeground);
+        }
+
+        .status-badge.cancelled {
+            background: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .history-action-btn {
+            padding: 4px 8px;
+            background: transparent;
+            color: var(--vscode-button-foreground);
+            border: 1px solid var(--vscode-button-border);
+            border-radius: 2px;
+            font-family: var(--vscode-font-family);
+            font-size: 11px;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .history-action-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        /* Detail View */
+        .detail-view {
+            display: none;
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 2px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .detail-view.active {
+            display: block;
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .detail-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .close-detail-btn {
+            padding: 4px;
+            width: 24px;
+            height: 24px;
+            background: transparent;
+            color: var(--vscode-foreground);
+            border: none;
+            cursor: pointer;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-detail-btn:hover {
+            background: var(--vscode-toolbar-hoverBackground);
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .detail-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-field.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .detail-field-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 4px;
+        }
+
+        .detail-field-value {
+            font-size: 12px;
+            color: var(--vscode-foreground);
+        }
+
+        .detail-error {
+            background: var(--vscode-inputValidation-errorBackground);
+            color: var(--vscode-inputValidation-errorForeground);
+            border: 1px solid var(--vscode-inputValidation-errorBorder);
+            padding: 8px 12px;
+            border-radius: 2px;
+            font-family: var(--vscode-editor-font-family);
+            font-size: 11px;
+            white-space: pre-wrap;
+        }
+
+        /* Loading */
+        .loading {
+            padding: 20px;
+            text-align: center;
+            color: var(--vscode-descriptionForeground);
+            font-size: 12px;
+        }
+
+        /* Error */
+        .error-message {
+            background: var(--vscode-inputValidation-errorBackground);
+            color: var(--vscode-inputValidation-errorForeground);
+            border: 1px solid var(--vscode-inputValidation-errorBorder);
+            padding: 8px 12px;
+            font-size: 12px;
+            margin-bottom: 16px;
+            border-radius: 2px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            padding: 32px 20px;
+            text-align: center;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .empty-state-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--vscode-foreground);
+        }
+
+        .empty-state-text {
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        /* Codicon styling */
+        .codicon {
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="history-container">
+        <!-- Header -->
+        <div class="history-header">
+            <h1 class="history-title">Execution History</h1>
+            <div class="header-actions">
+                <button class="clear-history-btn" id="clearHistoryBtn">
+                    <span class="codicon codicon-trash"></span>
+                    Clear History
+                </button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="history-content">
+            <!-- Loading State -->
+            <div class="loading" id="loadingState">Loading history...</div>
+
+            <!-- Error Message -->
+            <div class="error-message hidden" id="errorMessage"></div>
+
+            <!-- Statistics Section -->
+            <div class="statistics-section hidden" id="statisticsSection">
+                <h2 class="statistics-header">Statistics</h2>
+                <div class="statistics-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Executions</div>
+                        <div class="stat-value" id="statTotalExecutions">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Success Rate</div>
+                        <div class="stat-value" id="statSuccessRate">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Average Duration</div>
+                        <div class="stat-value" id="statAvgDuration">0s</div>
+                    </div>
+                </div>
+                <div class="stat-table-container">
+                    <h3 class="statistics-header">By Spec</h3>
+                    <table class="stat-table" id="statBySpec">
+                        <thead>
+                            <tr>
+                                <th>Spec</th>
+                                <th>Executions</th>
+                                <th>Success</th>
+                                <th>Failed</th>
+                                <th>Avg Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="stat-table-container" style="margin-top: 16px;">
+                    <h3 class="statistics-header">By Profile</h3>
+                    <table class="stat-table" id="statByProfile">
+                        <thead>
+                            <tr>
+                                <th>Profile</th>
+                                <th>Executions</th>
+                                <th>Success</th>
+                                <th>Failed</th>
+                                <th>Avg Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section hidden" id="filterSection">
+                <div class="filter-header">
+                    <h2 class="filter-title">Filters</h2>
+                    <button class="filter-toggle" id="filterToggle">
+                        <span class="codicon codicon-chevron-up"></span>
+                        <span id="filterToggleText">Collapse</span>
+                    </button>
+                </div>
+                <div class="filter-form" id="filterForm">
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterSpec">Spec</label>
+                        <input type="text" class="filter-input" id="filterSpec" placeholder="Filter by spec name...">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterProfile">Profile</label>
+                        <input type="text" class="filter-input" id="filterProfile" placeholder="Filter by profile...">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterStatus">Status</label>
+                        <select class="filter-select" id="filterStatus">
+                            <option value="">All</option>
+                            <option value="running">Running</option>
+                            <option value="completed">Completed</option>
+                            <option value="failed">Failed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterStartDate">Start Date</label>
+                        <input type="date" class="filter-input" id="filterStartDate">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label" for="filterEndDate">End Date</label>
+                        <input type="date" class="filter-input" id="filterEndDate">
+                    </div>
+                    <div class="filter-actions">
+                        <button class="filter-btn secondary" id="clearFiltersBtn">Clear Filters</button>
+                        <button class="filter-btn" id="applyFiltersBtn">Apply Filters</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail View -->
+            <div class="detail-view" id="detailView">
+                <div class="detail-header">
+                    <h2 class="detail-title">Execution Details</h2>
+                    <button class="close-detail-btn" id="closeDetailBtn">
+                        <span class="codicon codicon-close"></span>
+                    </button>
+                </div>
+                <div class="detail-grid" id="detailGrid">
+                    <!-- Details will be rendered here -->
+                </div>
+            </div>
+
+            <!-- History List -->
+            <ul class="history-list hidden" id="historyList">
+                <!-- History entries will be rendered here -->
+            </ul>
+
+            <!-- Empty State -->
+            <div class="empty-state hidden" id="emptyState">
+                <div class="empty-state-title">No Execution History</div>
+                <div class="empty-state-text">
+                    Execute a spec to see its history here.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script nonce="{{nonce}}">
+        // VSCode API
+        const vscode = acquireVsCodeApi();
+
+        // State
+        let allEntries = [];
+        let filteredEntries = [];
+        let statistics = null;
+        let currentView = 'list'; // 'list', 'detail'
+        let selectedEntryId = null;
+        let filterCollapsed = false;
+
+        // DOM Elements
+        const loadingState = document.getElementById('loadingState');
+        const errorMessage = document.getElementById('errorMessage');
+        const statisticsSection = document.getElementById('statisticsSection');
+        const filterSection = document.getElementById('filterSection');
+        const historyList = document.getElementById('historyList');
+        const emptyState = document.getElementById('emptyState');
+        const detailView = document.getElementById('detailView');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+        // Initialize
+        function init() {
+            setupEventListeners();
+            requestHistory();
+            requestStatistics();
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Clear History Button
+            clearHistoryBtn.addEventListener('click', handleClearHistory);
+
+            // Filter Toggle
+            document.getElementById('filterToggle').addEventListener('click', toggleFilters);
+
+            // Filter Actions
+            document.getElementById('applyFiltersBtn').addEventListener('click', applyFilters);
+            document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
+
+            // Detail View
+            document.getElementById('closeDetailBtn').addEventListener('click', hideDetailView);
+
+            // Message Handler
+            window.addEventListener('message', handleMessage);
+        }
+
+        // Request history from extension
+        function requestHistory() {
+            vscode.postMessage({ type: 'loadHistory' });
+        }
+
+        // Request statistics from extension
+        function requestStatistics() {
+            vscode.postMessage({ type: 'getStatistics' });
+        }
+
+        // Handle messages from extension
+        function handleMessage(event) {
+            const message = event.data;
+
+            switch (message.type) {
+                case 'historyLoaded':
+                    handleHistoryLoaded(message.entries);
+                    break;
+                case 'historyFiltered':
+                    handleHistoryFiltered(message.entries);
+                    break;
+                case 'statisticsLoaded':
+                    handleStatisticsLoaded(message.statistics);
+                    break;
+                case 'historyCleared':
+                    handleHistoryCleared();
+                    break;
+                case 'error':
+                    handleError(message.message, message.details);
+                    break;
+            }
+        }
+
+        // Handle history loaded
+        function handleHistoryLoaded(entries) {
+            allEntries = entries;
+            filteredEntries = entries;
+            loadingState.classList.add('hidden');
+            renderHistory();
+        }
+
+        // Handle history filtered
+        function handleHistoryFiltered(entries) {
+            filteredEntries = entries;
+            renderHistory();
+        }
+
+        // Handle statistics loaded
+        function handleStatisticsLoaded(stats) {
+            statistics = stats;
+            renderStatistics();
+        }
+
+        // Handle history cleared
+        function handleHistoryCleared() {
+            allEntries = [];
+            filteredEntries = [];
+            statistics = null;
+            renderHistory();
+            renderStatistics();
+            showSuccess('History cleared successfully');
+        }
+
+        // Handle error
+        function handleError(message, details) {
+            errorMessage.textContent = details ? `${message}: ${details}` : message;
+            errorMessage.classList.remove('hidden');
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            errorMessage.style.background = 'var(--vscode-editorInfo-background)';
+            errorMessage.style.color = 'var(--vscode-editorInfo-foreground)';
+            errorMessage.style.borderColor = 'var(--vscode-editorInfo-border)';
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+                errorMessage.style.background = '';
+                errorMessage.style.color = '';
+                errorMessage.style.borderColor = '';
+            }, 3000);
+        }
+
+        // Render history
+        function renderHistory() {
+            if (filteredEntries.length === 0) {
+                historyList.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                filterSection.classList.add('hidden');
+                statisticsSection.classList.add('hidden');
+                return;
+            }
+
+            historyList.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            filterSection.classList.remove('hidden');
+            statisticsSection.classList.remove('hidden');
+
+            historyList.innerHTML = filteredEntries.map(entry => `
+                <li class="history-item" onclick="showDetailView('${entry.executionId}')">
+                    <div class="history-info">
+                        <div class="history-field">
+                            <div class="field-label">Spec</div>
+                            <div class="field-value">${escapeHtml(entry.specName)}</div>
+                        </div>
+                        <div class="history-field">
+                            <div class="field-label">Profile</div>
+                            <div class="field-value">${escapeHtml(entry.profileName)}</div>
+                        </div>
+                        <div class="history-field">
+                            <div class="field-label">Status</div>
+                            <div class="field-value">
+                                <span class="status-badge ${entry.status}">${entry.status}</span>
+                            </div>
+                        </div>
+                        <div class="history-field">
+                            <div class="field-label">Start Time</div>
+                            <div class="field-value">${formatDateTime(entry.startTime)}</div>
+                        </div>
+                        <div class="history-field">
+                            <div class="field-label">Duration</div>
+                            <div class="field-value">${formatDuration(entry.duration)}</div>
+                        </div>
+                    </div>
+                    <div class="history-actions">
+                        <button class="history-action-btn" onclick="event.stopPropagation(); showDetailView('${entry.executionId}')">
+                            <span class="codicon codicon-info"></span>
+                            Details
+                        </button>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        // Render statistics
+        function renderStatistics() {
+            if (!statistics || statistics.totalExecutions === 0) {
+                statisticsSection.classList.add('hidden');
+                return;
+            }
+
+            statisticsSection.classList.remove('hidden');
+
+            // Overall statistics
+            document.getElementById('statTotalExecutions').textContent = statistics.totalExecutions;
+            document.getElementById('statSuccessRate').textContent = `${statistics.successRate.toFixed(1)}%`;
+            document.getElementById('statAvgDuration').textContent = formatDuration(statistics.averageDuration);
+
+            // By Spec
+            const bySpecBody = document.querySelector('#statBySpec tbody');
+            bySpecBody.innerHTML = Object.entries(statistics.bySpec).map(([specId, stats]) => `
+                <tr>
+                    <td>${escapeHtml(stats.specName)}</td>
+                    <td>${stats.totalExecutions}</td>
+                    <td>${stats.successCount}</td>
+                    <td>${stats.failureCount}</td>
+                    <td>${formatDuration(stats.averageDuration)}</td>
+                </tr>
+            `).join('');
+
+            // By Profile
+            const byProfileBody = document.querySelector('#statByProfile tbody');
+            byProfileBody.innerHTML = Object.entries(statistics.byProfile).map(([profileId, stats]) => `
+                <tr>
+                    <td>${escapeHtml(stats.profileName)}</td>
+                    <td>${stats.totalExecutions}</td>
+                    <td>${stats.successCount}</td>
+                    <td>${stats.failureCount}</td>
+                    <td>${formatDuration(stats.averageDuration)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Show detail view
+        function showDetailView(executionId) {
+            const entry = allEntries.find(e => e.executionId === executionId);
+            if (!entry) return;
+
+            currentView = 'detail';
+            selectedEntryId = executionId;
+            detailView.classList.add('active');
+            historyList.classList.add('hidden');
+            filterSection.classList.add('hidden');
+            statisticsSection.classList.add('hidden');
+
+            // Populate detail view
+            const detailGrid = document.getElementById('detailGrid');
+            detailGrid.innerHTML = `
+                <div class="detail-field">
+                    <div class="detail-field-label">Execution ID</div>
+                    <div class="detail-field-value">${escapeHtml(entry.executionId)}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-field-label">Status</div>
+                    <div class="detail-field-value">
+                        <span class="status-badge ${entry.status}">${entry.status}</span>
+                    </div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-field-label">Spec Name</div>
+                    <div class="detail-field-value">${escapeHtml(entry.specName)}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-field-label">Spec ID</div>
+                    <div class="detail-field-value">${escapeHtml(entry.specId)}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-field-label">Profile Name</div>
+                    <div class="detail-field-value">${escapeHtml(entry.profileName)}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-field-label">Profile ID</div>
+                    <div class="detail-field-value">${escapeHtml(entry.profileId)}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-field-label">Workspace Folder</div>
+                    <div class="detail-field-value">${escapeHtml(entry.workspaceFolder)}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-field-label">Tasks</div>
+                    <div class="detail-field-value">${entry.completedTasks} / ${entry.totalTasks}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-field-label">Start Time</div>
+                    <div class="detail-field-value">${formatDateTime(entry.startTime)}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-field-label">End Time</div>
+                    <div class="detail-field-value">${entry.endTime ? formatDateTime(entry.endTime) : 'N/A'}</div>
+                </div>
+                <div class="detail-field">
+                    <div class="detail-field-label">Duration</div>
+                    <div class="detail-field-value">${formatDuration(entry.duration)}</div>
+                </div>
+                ${entry.error ? `
+                    <div class="detail-field full-width">
+                        <div class="detail-field-label">Error</div>
+                        <div class="detail-error">${escapeHtml(entry.error)}</div>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // Hide detail view
+        function hideDetailView() {
+            currentView = 'list';
+            selectedEntryId = null;
+            detailView.classList.remove('active');
+            historyList.classList.remove('hidden');
+            filterSection.classList.remove('hidden');
+            statisticsSection.classList.remove('hidden');
+        }
+
+        // Toggle filters
+        function toggleFilters() {
+            filterCollapsed = !filterCollapsed;
+            const filterForm = document.getElementById('filterForm');
+            const filterToggleText = document.getElementById('filterToggleText');
+            const filterToggleIcon = document.querySelector('#filterToggle .codicon');
+
+            if (filterCollapsed) {
+                filterForm.classList.add('collapsed');
+                filterToggleText.textContent = 'Expand';
+                filterToggleIcon.className = 'codicon codicon-chevron-down';
+            } else {
+                filterForm.classList.remove('collapsed');
+                filterToggleText.textContent = 'Collapse';
+                filterToggleIcon.className = 'codicon codicon-chevron-up';
+            }
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const filter = {};
+
+            const specFilter = document.getElementById('filterSpec').value.trim();
+            if (specFilter) {
+                filter.specId = specFilter;
+            }
+
+            const profileFilter = document.getElementById('filterProfile').value.trim();
+            if (profileFilter) {
+                filter.profileId = profileFilter;
+            }
+
+            const statusFilter = document.getElementById('filterStatus').value;
+            if (statusFilter) {
+                filter.status = statusFilter;
+            }
+
+            const startDateFilter = document.getElementById('filterStartDate').value;
+            if (startDateFilter) {
+                filter.startDate = new Date(startDateFilter).toISOString();
+            }
+
+            const endDateFilter = document.getElementById('filterEndDate').value;
+            if (endDateFilter) {
+                filter.endDate = new Date(endDateFilter).toISOString();
+            }
+
+            vscode.postMessage({
+                type: 'filterHistory',
+                filter
+            });
+        }
+
+        // Clear filters
+        function clearFilters() {
+            document.getElementById('filterSpec').value = '';
+            document.getElementById('filterProfile').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+
+            // Reload all history
+            filteredEntries = allEntries;
+            renderHistory();
+        }
+
+        // Handle clear history
+        function handleClearHistory() {
+            if (allEntries.length === 0) {
+                showSuccess('History is already empty');
+                return;
+            }
+
+            if (confirm('Are you sure you want to clear all execution history? This action cannot be undone.')) {
+                vscode.postMessage({ type: 'clearHistory' });
+            }
+        }
+
+        // Format date/time
+        function formatDateTime(isoString) {
+            if (!isoString) return 'N/A';
+            const date = new Date(isoString);
+            return date.toLocaleString();
+        }
+
+        // Format duration
+        function formatDuration(ms) {
+            if (!ms || ms === 0) return 'N/A';
+            
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+
+            if (hours > 0) {
+                return `${hours}h ${minutes % 60}m`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${seconds % 60}s`;
+            } else {
+                return `${seconds}s`;
+            }
+        }
+
+        // Utility: Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

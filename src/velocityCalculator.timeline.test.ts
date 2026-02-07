@@ -23,7 +23,8 @@ describe('VelocityCalculator - Timeline Features', () => {
 
   describe('Daily Task Counts', () => {
     test('should record daily task counts', async () => {
-      const today = new Date('2026-02-04T10:00:00Z');
+      // Use current date to match getDailyTaskCounts behavior
+      const today = new Date();
       
       await calculator.recordTaskCompletion('spec-1', 'task-1', true, today);
       await calculator.recordTaskCompletion('spec-1', 'task-2', true, today);

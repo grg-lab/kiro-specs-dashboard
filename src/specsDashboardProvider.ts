@@ -3,6 +3,9 @@ import { SpecScanner } from './specScanner';
 import { StateManager } from './stateManager';
 import { VelocityCalculator } from './velocityCalculator';
 import { AnalyticsPanelManager } from './analyticsPanelManager';
+import { ProfileManager } from './profileManager';
+import { ExecutionManager } from './executionManager';
+import { ExecutionHistory } from './executionHistory';
 import { SpecFile } from './types';
 
 /**
@@ -15,6 +18,11 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
   private stateManager: StateManager;
   private velocityCalculator: VelocityCalculator;
   private analyticsPanelManager: AnalyticsPanelManager;
+  private profileManager?: ProfileManager;
+  private executionManager?: ExecutionManager;
+  private executionHistory?: ExecutionHistory;
+  private profilesPanelManager?: any; // ProfilesPanelManager
+  private historyPanelManager?: any; // HistoryPanelManager
   private specs: SpecFile[] = [];
   private outputChannel: vscode.OutputChannel;
   private isWebviewVisible: boolean = false;
@@ -37,6 +45,42 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
     this.velocityCalculator.initialize().catch(error => {
       this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: Failed to initialize velocity calculator: ${error}`);
     });
+  }
+
+  /**
+   * Set execution managers after construction
+   * This allows the extension to create the provider first, then inject the managers
+   * 
+   * Requirements: 1.1
+   */
+  setExecutionManagers(
+    profileManager: ProfileManager,
+    executionManager: ExecutionManager,
+    executionHistory: ExecutionHistory
+  ): void {
+    this.profileManager = profileManager;
+    this.executionManager = executionManager;
+    this.executionHistory = executionHistory;
+  }
+
+  /**
+   * Set profiles panel manager after construction
+   * This allows the extension to inject the panel manager for opening profiles
+   * 
+   * Requirements: 7.3
+   */
+  setProfilesPanelManager(profilesPanelManager: any): void {
+    this.profilesPanelManager = profilesPanelManager;
+  }
+
+  /**
+   * Set history panel manager after construction
+   * This allows the extension to inject the panel manager for opening history
+   * 
+   * Requirements: 7.3
+   */
+  setHistoryPanelManager(historyPanelManager: any): void {
+    this.historyPanelManager = historyPanelManager;
   }
 
   /**
@@ -119,6 +163,50 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
     }
     
     await this.loadSpecs();
+  }
+
+  /**
+   * Handle external changes to execution profiles file
+   * 
+   * Called when the file watcher detects changes to execution-profiles.json.
+   * Reloads profiles and notifies the webview.
+   * 
+   * Requirements: 11.4
+   */
+  async onProfilesFileChanged(uri: vscode.Uri): Promise<void> {
+    this.outputChannel.appendLine(
+      `[${new Date().toISOString()}] Profiles file changed, reloading profiles`
+    );
+    
+    // Check if profile manager is initialized
+    if (!this.profileManager) {
+      this.outputChannel.appendLine(
+        `[${new Date().toISOString()}] WARNING: ProfileManager not initialized, skipping profiles reload`
+      );
+      return;
+    }
+    
+    // Send profiles update to webview if visible
+    if (this.view && this.isWebviewVisible) {
+      // Get workspace folder from URI
+      const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+      if (workspaceFolder) {
+        try {
+          const profiles = await this.profileManager.loadProfiles(workspaceFolder);
+          this.view.webview.postMessage({
+            type: 'profilesUpdated',
+            profiles: profiles
+          });
+          this.outputChannel.appendLine(
+            `[${new Date().toISOString()}] Sent updated profiles to webview (${profiles.length} profiles)`
+          );
+        } catch (error) {
+          this.outputChannel.appendLine(
+            `[${new Date().toISOString()}] ERROR: Failed to reload profiles: ${error}`
+          );
+        }
+      }
+    }
   }
 
   /**
@@ -287,6 +375,28 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
           this.analyticsPanelManager.openAnalytics(this.specs);
           break;
         
+        case 'openProfiles':
+          // Open the profiles panel
+          this.outputChannel.appendLine(`[${new Date().toISOString()}] Opening profiles panel`);
+          if (this.profilesPanelManager) {
+            this.profilesPanelManager.openProfiles();
+          } else {
+            this.outputChannel.appendLine(`[${new Date().toISOString()}] WARNING: ProfilesPanelManager not initialized`);
+            vscode.window.showWarningMessage('Profiles panel manager is not available');
+          }
+          break;
+        
+        case 'openHistory':
+          // Open the history panel
+          this.outputChannel.appendLine(`[${new Date().toISOString()}] Opening history panel`);
+          if (this.historyPanelManager) {
+            this.historyPanelManager.openHistory();
+          } else {
+            this.outputChannel.appendLine(`[${new Date().toISOString()}] WARNING: HistoryPanelManager not initialized`);
+            vscode.window.showWarningMessage('History panel manager is not available');
+          }
+          break;
+        
         case 'addNote':
           // Validate input
           if (typeof message.specName !== 'string' || typeof message.text !== 'string') {
@@ -321,6 +431,81 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
             return;
           }
           await this.openNotesPanel(this.sanitizeFileName(message.specName));
+          break;
+        
+        // Execution profile management messages
+        // Requirements: 1.3, 1.4, 1.5, 3.5
+        
+        case 'createProfile':
+          // Validate input
+          if (!message.profile || typeof message.profile !== 'object') {
+            this.outputChannel.appendLine(`[${new Date().toISOString()}] WARNING: Invalid createProfile message parameters`);
+            return;
+          }
+          await this.handleCreateProfile(message.profile);
+          break;
+        
+        case 'updateProfile':
+          // Validate input
+          if (typeof message.profileId !== 'string' || !message.updates || typeof message.updates !== 'object') {
+            this.outputChannel.appendLine(`[${new Date().toISOString()}] WARNING: Invalid updateProfile message parameters`);
+            return;
+          }
+          await this.handleUpdateProfile(message.profileId, message.updates);
+          break;
+        
+        case 'deleteProfile':
+          // Validate input
+          if (typeof message.profileId !== 'string') {
+            this.outputChannel.appendLine(`[${new Date().toISOString()}] WARNING: Invalid deleteProfile message parameters`);
+            return;
+          }
+          await this.handleDeleteProfile(message.profileId);
+          break;
+        
+        case 'resetBuiltInProfile':
+          // Validate input
+          if (typeof message.profileId !== 'string') {
+            this.outputChannel.appendLine(`[${new Date().toISOString()}] WARNING: Invalid resetBuiltInProfile message parameters`);
+            return;
+          }
+          await this.handleResetBuiltInProfile(message.profileId);
+          break;
+        
+        case 'getProfiles':
+          await this.handleGetProfiles();
+          break;
+        
+        // Execution management messages
+        // Requirements: 4.1, 4.2
+        
+        case 'executeSpec':
+          // Validate input
+          if (typeof message.specId !== 'string' || typeof message.profileId !== 'string') {
+            this.outputChannel.appendLine(`[${new Date().toISOString()}] WARNING: Invalid executeSpec message parameters`);
+            return;
+          }
+          await this.handleExecuteSpec(message.specId, message.profileId);
+          break;
+        
+        case 'cancelExecution':
+          // Validate input
+          if (typeof message.executionId !== 'string') {
+            this.outputChannel.appendLine(`[${new Date().toISOString()}] WARNING: Invalid cancelExecution message parameters`);
+            return;
+          }
+          await this.handleCancelExecution(message.executionId);
+          break;
+        
+        // Execution history messages
+        // Requirements: 6.4, 6.6
+        
+        case 'getExecutionHistory':
+          await this.handleGetExecutionHistory(message.filter);
+          break;
+        
+        case 'getExecutionStatistics':
+          await this.handleGetExecutionStatistics();
           break;
         
         case 'webviewError':
@@ -367,6 +552,373 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
       .replace(/[\/\\]/g, '') // Remove / and \
       .replace(/^\.+/, '')    // Remove leading dots
       .trim();
+  }
+
+  /**
+   * Handle createProfile message
+   * 
+   * Requirements: 1.3
+   */
+  private async handleCreateProfile(profile: any): Promise<void> {
+    if (!this.profileManager) {
+      this.sendError('Profile manager not initialized');
+      return;
+    }
+
+    try {
+      // Get first workspace folder
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (!workspaceFolder) {
+        this.sendError('No workspace folder open');
+        return;
+      }
+
+      await this.profileManager.createProfile(profile, workspaceFolder);
+      
+      // Reload and send updated profiles
+      const profiles = await this.profileManager.loadProfiles(workspaceFolder);
+      this.sendProfilesUpdated(profiles);
+      
+      vscode.window.showInformationMessage(`Profile "${profile.name}" created successfully`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: Failed to create profile: ${errorMessage}`);
+      this.sendError(`Failed to create profile: ${errorMessage}`);
+      vscode.window.showErrorMessage(`Failed to create profile: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Handle updateProfile message
+   * 
+   * Requirements: 1.4
+   */
+  private async handleUpdateProfile(profileId: string, updates: any): Promise<void> {
+    if (!this.profileManager) {
+      this.sendError('Profile manager not initialized');
+      return;
+    }
+
+    try {
+      // Get first workspace folder
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (!workspaceFolder) {
+        this.sendError('No workspace folder open');
+        return;
+      }
+
+      await this.profileManager.updateProfile(profileId, updates, workspaceFolder);
+      
+      // Reload and send updated profiles
+      const profiles = await this.profileManager.loadProfiles(workspaceFolder);
+      this.sendProfilesUpdated(profiles);
+      
+      vscode.window.showInformationMessage(`Profile "${profileId}" updated successfully`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: Failed to update profile: ${errorMessage}`);
+      this.sendError(`Failed to update profile: ${errorMessage}`);
+      vscode.window.showErrorMessage(`Failed to update profile: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Handle deleteProfile message
+   * 
+   * Requirements: 1.5
+   */
+  private async handleDeleteProfile(profileId: string): Promise<void> {
+    if (!this.profileManager) {
+      this.sendError('Profile manager not initialized');
+      return;
+    }
+
+    try {
+      // Get first workspace folder
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (!workspaceFolder) {
+        this.sendError('No workspace folder open');
+        return;
+      }
+
+      await this.profileManager.deleteProfile(profileId, workspaceFolder);
+      
+      // Reload and send updated profiles
+      const profiles = await this.profileManager.loadProfiles(workspaceFolder);
+      this.sendProfilesUpdated(profiles);
+      
+      vscode.window.showInformationMessage(`Profile "${profileId}" deleted successfully`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: Failed to delete profile: ${errorMessage}`);
+      this.sendError(`Failed to delete profile: ${errorMessage}`);
+      vscode.window.showErrorMessage(`Failed to delete profile: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Handle resetBuiltInProfile message
+   * 
+   * Requirements: 3.5
+   */
+  private async handleResetBuiltInProfile(profileId: string): Promise<void> {
+    if (!this.profileManager) {
+      this.sendError('Profile manager not initialized');
+      return;
+    }
+
+    try {
+      // Get first workspace folder
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (!workspaceFolder) {
+        this.sendError('No workspace folder open');
+        return;
+      }
+
+      await this.profileManager.resetBuiltInProfile(profileId, workspaceFolder);
+      
+      // Reload and send updated profiles
+      const profiles = await this.profileManager.loadProfiles(workspaceFolder);
+      this.sendProfilesUpdated(profiles);
+      
+      vscode.window.showInformationMessage(`Profile "${profileId}" reset to default`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: Failed to reset profile: ${errorMessage}`);
+      this.sendError(`Failed to reset profile: ${errorMessage}`);
+      vscode.window.showErrorMessage(`Failed to reset profile: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Handle getProfiles message
+   * 
+   * Requirements: 4.1
+   */
+  private async handleGetProfiles(): Promise<void> {
+    if (!this.profileManager) {
+      this.sendError('Profile manager not initialized');
+      return;
+    }
+
+    try {
+      // Get first workspace folder
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (!workspaceFolder) {
+        this.sendError('No workspace folder open');
+        return;
+      }
+
+      const profiles = await this.profileManager.loadProfiles(workspaceFolder);
+      this.sendProfilesUpdated(profiles);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: Failed to load profiles: ${errorMessage}`);
+      this.sendError(`Failed to load profiles: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Handle executeSpec message
+   * 
+   * Requirements: 4.1, 4.2
+   */
+  private async handleExecuteSpec(specId: string, profileId: string): Promise<void> {
+    if (!this.executionManager || !this.executionHistory) {
+      this.sendError('Execution manager not initialized');
+      return;
+    }
+
+    try {
+      // Find the spec
+      const spec = this.specs.find(s => s.name === specId);
+      if (!spec) {
+        this.sendError(`Spec "${specId}" not found`);
+        return;
+      }
+
+      // Get workspace folder
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (!workspaceFolder) {
+        this.sendError('No workspace folder open');
+        return;
+      }
+
+      // Execute the spec
+      const result = await this.executionManager.executeSpec(spec, profileId, workspaceFolder);
+      
+      if (result.success && result.executionId) {
+        // Get execution state
+        const state = this.executionManager.getExecutionState(specId);
+        if (state) {
+          this.sendExecutionStateChanged(specId, state);
+        }
+
+        // Create history entry
+        const profile = await this.profileManager?.getProfile(profileId, workspaceFolder);
+        if (profile) {
+          await this.executionHistory.addEntry({
+            executionId: result.executionId,
+            specId: spec.name,
+            specName: spec.name,
+            profileId: profile.id,
+            profileName: profile.name,
+            workspaceFolder: workspaceFolder.uri.fsPath,
+            status: 'running',
+            startTime: new Date().toISOString(),
+            completedTasks: spec.completedTasks,
+            totalTasks: spec.totalTasks
+          });
+        }
+
+        // Note: ExecutionManager already shows a notification, so we don't need to show another one here
+      } else {
+        this.sendError(result.error || 'Execution failed');
+        vscode.window.showErrorMessage(result.error || 'Execution failed');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: Failed to execute spec: ${errorMessage}`);
+      this.sendError(`Failed to execute spec: ${errorMessage}`);
+      vscode.window.showErrorMessage(`Failed to execute spec: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Handle cancelExecution message
+   * 
+   * Requirements: 7.2
+   */
+  private async handleCancelExecution(executionId: string): Promise<void> {
+    if (!this.executionManager || !this.executionHistory) {
+      this.sendError('Execution manager not initialized');
+      return;
+    }
+
+    try {
+      await this.executionManager.cancelExecution(executionId);
+      
+      // Update history entry
+      await this.executionHistory.updateEntry(executionId, {
+        status: 'cancelled',
+        endTime: new Date().toISOString()
+      });
+
+      vscode.window.showInformationMessage('Execution cancelled');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: Failed to cancel execution: ${errorMessage}`);
+      this.sendError(`Failed to cancel execution: ${errorMessage}`);
+      vscode.window.showErrorMessage(`Failed to cancel execution: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Handle getExecutionHistory message
+   * 
+   * Requirements: 6.4
+   */
+  private async handleGetExecutionHistory(filter?: any): Promise<void> {
+    if (!this.executionHistory) {
+      this.sendError('Execution history not initialized');
+      return;
+    }
+
+    try {
+      const entries = filter 
+        ? await this.executionHistory.queryEntries(filter)
+        : await this.executionHistory.getAllEntries();
+      
+      this.sendExecutionHistoryUpdated(entries);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: Failed to load execution history: ${errorMessage}`);
+      this.sendError(`Failed to load execution history: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Handle getExecutionStatistics message
+   * 
+   * Requirements: 6.6
+   */
+  private async handleGetExecutionStatistics(): Promise<void> {
+    if (!this.executionHistory) {
+      this.sendError('Execution history not initialized');
+      return;
+    }
+
+    try {
+      const statistics = await this.executionHistory.getStatistics();
+      this.sendExecutionStatisticsUpdated(statistics);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.outputChannel.appendLine(`[${new Date().toISOString()}] ERROR: Failed to load execution statistics: ${errorMessage}`);
+      this.sendError(`Failed to load execution statistics: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Send profilesUpdated message to webview
+   */
+  private sendProfilesUpdated(profiles: any[]): void {
+    if (this.view) {
+      this.view.webview.postMessage({
+        type: 'profilesUpdated',
+        profiles: profiles
+      });
+    }
+  }
+
+  /**
+   * Send executionStateChanged message to webview
+   */
+  private sendExecutionStateChanged(specId: string, state: any): void {
+    if (this.view) {
+      this.view.webview.postMessage({
+        type: 'executionStateChanged',
+        specId: specId,
+        state: state
+      });
+    }
+  }
+
+  /**
+   * Send executionHistoryUpdated message to webview
+   */
+  private sendExecutionHistoryUpdated(entries: any[]): void {
+    if (this.view) {
+      this.view.webview.postMessage({
+        type: 'executionHistoryUpdated',
+        entries: entries
+      });
+    }
+  }
+
+  /**
+   * Send executionStatisticsUpdated message to webview
+   * 
+   * Requirements: 6.6
+   */
+  private sendExecutionStatisticsUpdated(statistics: any): void {
+    if (this.view) {
+      this.view.webview.postMessage({
+        type: 'executionStatisticsUpdated',
+        statistics: statistics
+      });
+    }
+  }
+
+  /**
+   * Send error message to webview
+   */
+  private sendError(message: string): void {
+    if (this.view) {
+      this.view.webview.postMessage({
+        type: 'error',
+        message: message
+      });
+    }
   }
 
   /**
@@ -1502,29 +2054,41 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
         }
         
         .note-edit-btn, .note-delete-btn {
-          padding: 4px;
-          width: 24px;
-          height: 24px;
+          padding: 4px 8px;
           background: transparent;
-          color: var(--vscode-foreground);
-          border: none;
+          color: var(--vscode-button-foreground);
+          border: 1px solid var(--vscode-button-border);
           border-radius: 2px;
           font-family: var(--vscode-font-family);
-          font-size: 16px;
+          font-size: 11px;
           cursor: pointer;
+          outline: none;
           display: inline-flex;
           align-items: center;
-          justify-content: center;
-          outline: none;
+          gap: 4px;
         }
         
-        .note-edit-btn:hover, .note-delete-btn:hover {
-          background: var(--vscode-toolbar-hoverBackground);
+        .note-edit-btn:hover:not(:disabled), .note-delete-btn:hover:not(:disabled) {
+          background: var(--vscode-button-hoverBackground);
         }
         
         .note-edit-btn:focus, .note-delete-btn:focus {
           outline: 1px solid var(--vscode-focusBorder);
           outline-offset: -1px;
+        }
+        
+        .note-edit-btn:disabled, .note-delete-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+        
+        .note-delete-btn {
+          color: var(--vscode-errorForeground);
+          border-color: var(--vscode-errorForeground);
+        }
+        
+        .note-delete-btn:hover:not(:disabled) {
+          background: var(--vscode-statusBarItem-errorBackground);
         }
         
         .codicon {
@@ -2003,9 +2567,11 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
                 <div class="note-actions">
                   <button class="note-edit-btn" data-note-id="\${note.id}" title="Edit note">
                     <span class="codicon codicon-edit"></span>
+                    Edit
                   </button>
                   <button class="note-delete-btn" data-note-id="\${note.id}" title="Delete note">
                     <span class="codicon codicon-trash"></span>
+                    Delete
                   </button>
                 </div>
               </div>
@@ -2231,6 +2797,16 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
    */
   getSpecs(): Array<{ totalTasks: number; completedTasks: number }> {
     return this.specs;
+  }
+
+  /**
+   * Notify webview of execution state change
+   * Called by ExecutionManager when execution state changes
+   * 
+   * Requirements: 5.1, 5.2, 5.3, 7.1
+   */
+  notifyExecutionStateChanged(specId: string, state: any): void {
+    this.sendExecutionStateChanged(specId, state);
   }
 
   /**

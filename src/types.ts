@@ -268,3 +268,260 @@ export type AnalyticsCommand =
   | { type: 'refreshMetrics' }
   | { type: 'switchTab'; tab: string }
   | { type: 'exportData'; format: 'csv' | 'json' };
+
+/**
+ * ============================================================================
+ * Automated Spec Execution Types
+ * ============================================================================
+ */
+
+/**
+ * Execution profile with customizable prompt template
+ * 
+ * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5
+ */
+export interface ExecutionProfile {
+  id: string;                    // Unique identifier (kebab-case)
+  name: string;                  // Display name
+  icon: string;                  // VSCode codicon name
+  promptTemplate: string;        // Template with {{variables}}
+  isBuiltIn: boolean;            // True for MVP and Full profiles
+  createdAt: string;             // ISO 8601 timestamp
+  updatedAt: string;             // ISO 8601 timestamp
+  description?: string;          // Optional description
+  metadata?: Record<string, any>; // Optional custom metadata
+}
+
+/**
+ * Execution state for tracking active executions
+ * 
+ * Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 9.4
+ */
+export interface ExecutionState {
+  executionId: string;           // Unique execution identifier
+  specId: string;                // Spec being executed
+  profileId: string;             // Profile used
+  workspaceFolder: string;       // Workspace folder path
+  status: 'running' | 'completed' | 'failed' | 'cancelled';
+  startTime: string;             // ISO 8601 timestamp
+  endTime?: string;              // ISO 8601 timestamp
+  completedTasks: number;        // Number of completed tasks
+  totalTasks: number;            // Total number of tasks
+  error?: string;                // Error message if failed
+}
+
+/**
+ * Execution history entry for tracking past executions
+ * 
+ * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 9.5
+ */
+export interface ExecutionHistoryEntry {
+  executionId: string;           // Unique execution identifier
+  specId: string;                // Spec that was executed
+  specName: string;              // Spec display name
+  profileId: string;             // Profile used
+  profileName: string;           // Profile display name
+  workspaceFolder: string;       // Workspace folder path (for multi-workspace tracking)
+  status: 'running' | 'completed' | 'failed' | 'cancelled';
+  startTime: string;             // ISO 8601 timestamp
+  endTime?: string;              // ISO 8601 timestamp
+  duration?: number;             // Duration in milliseconds
+  completedTasks: number;        // Tasks completed
+  totalTasks: number;            // Total tasks
+  error?: string;                // Error message if failed
+}
+
+/**
+ * Filter criteria for querying execution history
+ * 
+ * Requirements: 6.6
+ */
+export interface HistoryFilter {
+  specId?: string;               // Filter by spec
+  profileId?: string;            // Filter by profile
+  status?: ExecutionState['status']; // Filter by status
+  startDate?: string;            // Filter by start date (ISO 8601)
+  endDate?: string;              // Filter by end date (ISO 8601)
+  workspaceFolder?: string;      // Filter by workspace folder
+}
+
+/**
+ * Template variables available for profile templates
+ * 
+ * Requirements: 2.1, 2.2
+ */
+export interface TemplateVariables {
+  specName: string;              // Name of the spec
+  specPath: string;              // Absolute path to spec folder
+  totalTasks: number;            // Total number of tasks
+  completedTasks: number;        // Number of completed tasks
+  remainingTasks: number;        // Number of remaining tasks
+  workspaceFolder: string;       // Workspace folder name
+  specRelativePath: string;      // Relative path from workspace root
+}
+
+/**
+ * Validation result for profile validation
+ * 
+ * Requirements: 1.3, 10.2
+ */
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
+/**
+ * Execution result returned from execution manager
+ * 
+ * Requirements: 4.2, 4.3, 4.4, 4.5
+ */
+export interface ExecutionResult {
+  success: boolean;
+  executionId?: string;
+  error?: string;
+}
+
+/**
+ * Execution statistics for analytics
+ * 
+ * Requirements: 6.6
+ */
+export interface ExecutionStatistics {
+  totalExecutions: number;
+  successRate: number;           // Percentage (0-100)
+  averageDuration: number;       // Milliseconds
+  bySpec: { [specId: string]: SpecExecutionStats };
+  byProfile: { [profileId: string]: ProfileExecutionStats };
+}
+
+/**
+ * Per-spec execution statistics
+ */
+export interface SpecExecutionStats {
+  specName: string;
+  totalExecutions: number;
+  successCount: number;
+  failureCount: number;
+  averageDuration: number;
+}
+
+/**
+ * Per-profile execution statistics
+ */
+export interface ProfileExecutionStats {
+  profileName: string;
+  totalExecutions: number;
+  successCount: number;
+  failureCount: number;
+  averageDuration: number;
+}
+
+/**
+ * Extended ExtensionMessage types for automated spec execution
+ * 
+ * Requirements: 1.3, 1.4, 1.5, 4.1, 4.2, 6.4, 6.6, 3.5
+ */
+export type AutomatedExecutionExtensionMessage =
+  | { type: 'profilesUpdated'; profiles: ExecutionProfile[] }
+  | { type: 'executionStateChanged'; specId: string; state: ExecutionState }
+  | { type: 'executionHistoryUpdated'; entries: ExecutionHistoryEntry[] }
+  | { type: 'executionStatisticsUpdated'; statistics: ExecutionStatistics };
+
+/**
+ * Extended WebviewMessage types for automated spec execution
+ * 
+ * Requirements: 1.3, 1.4, 1.5, 4.1, 4.2, 6.4, 6.6, 3.5
+ */
+export type AutomatedExecutionWebviewMessage =
+  | { type: 'createProfile'; profile: ExecutionProfile }
+  | { type: 'updateProfile'; profileId: string; updates: Partial<ExecutionProfile> }
+  | { type: 'deleteProfile'; profileId: string }
+  | { type: 'executeSpec'; specId: string; profileId: string }
+  | { type: 'cancelExecution'; executionId: string }
+  | { type: 'getProfiles' }
+  | { type: 'getExecutionHistory'; filter?: HistoryFilter }
+  | { type: 'getExecutionStatistics' }
+  | { type: 'resetBuiltInProfile'; profileId: string };
+
+/**
+ * ============================================================================
+ * Webview Panels Refactor Types
+ * ============================================================================
+ */
+
+/**
+ * Messages sent from profiles webview to extension
+ * 
+ * Requirements: 5.1-5.7
+ */
+export type ProfilesWebviewMessage =
+  | { type: 'loadProfiles' }
+  | { type: 'createProfile'; profile: ExecutionProfile }
+  | { type: 'updateProfile'; profileId: string; updates: Partial<ExecutionProfile> }
+  | { type: 'deleteProfile'; profileId: string }
+  | { type: 'resetProfile'; profileId: string }
+  | { type: 'confirmDelete'; profileId: string; profileName: string }
+  | { type: 'confirmReset'; profileId: string; profileName: string };
+
+/**
+ * Messages sent from extension to profiles webview
+ * 
+ * Requirements: 5.1-5.7
+ */
+export type ProfilesExtensionMessage =
+  | { type: 'profilesLoaded'; profiles: ExecutionProfile[] }
+  | { type: 'profileCreated'; profile: ExecutionProfile }
+  | { type: 'profileUpdated'; profile: ExecutionProfile }
+  | { type: 'profileDeleted'; profileId: string }
+  | { type: 'profileReset'; profile: ExecutionProfile }
+  | { type: 'error'; message: string; details?: string };
+
+/**
+ * Messages sent from history webview to extension
+ * 
+ * Requirements: 6.1-6.6
+ */
+export type HistoryWebviewMessage =
+  | { type: 'loadHistory' }
+  | { type: 'filterHistory'; filter: HistoryFilter }
+  | { type: 'getStatistics' }
+  | { type: 'clearHistory' };
+
+/**
+ * Messages sent from extension to history webview
+ * 
+ * Requirements: 6.1-6.6
+ */
+export type HistoryExtensionMessage =
+  | { type: 'historyLoaded'; entries: ExecutionHistoryEntry[] }
+  | { type: 'historyFiltered'; entries: ExecutionHistoryEntry[] }
+  | { type: 'statisticsLoaded'; statistics: ExecutionStatistics }
+  | { type: 'historyCleared' }
+  | { type: 'error'; message: string; details?: string };
+
+/**
+ * UI state for profiles webview
+ * 
+ * Requirements: 3.1-3.8
+ */
+export interface ProfilesViewState {
+  selectedProfileId?: string;
+  isCreating: boolean;
+  isEditing: boolean;
+  editingProfileId?: string;
+  searchQuery: string;
+  filterBuiltIn: 'all' | 'builtin' | 'custom';
+}
+
+/**
+ * UI state for history webview
+ * 
+ * Requirements: 4.1-4.7
+ */
+export interface HistoryViewState {
+  selectedEntryId?: string;
+  filter: HistoryFilter;
+  sortBy: 'date' | 'spec' | 'profile' | 'status';
+  sortOrder: 'asc' | 'desc';
+  viewMode: 'list' | 'details';
+}

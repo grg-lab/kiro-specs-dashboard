@@ -1,0 +1,58 @@
+// Kiro Execution Profiles Configuration
+//
+// This file defines execution profiles for automated spec execution.
+// Each profile contains a prompt template that can be customized with variables.
+//
+// Available Template Variables:
+//   {{specName}}         - Name of the spec (e.g., "user-authentication")
+//   {{specPath}}         - Absolute path to spec folder
+//   {{specRelativePath}} - Relative path from workspace root
+//   {{totalTasks}}       - Total number of tasks in the spec
+//   {{completedTasks}}   - Number of completed tasks
+//   {{remainingTasks}}   - Number of remaining tasks (totalTasks - completedTasks)
+//   {{workspaceFolder}}  - Workspace folder name
+//
+// Profile Structure:
+//   - id: Unique identifier (kebab-case, e.g., "my-custom-profile")
+//   - name: Display name shown in UI
+//   - icon: VSCode codicon name (e.g., "rocket", "star", "checklist")
+//   - promptTemplate: Template string with {{variables}} to be replaced
+//   - isBuiltIn: true for built-in profiles (MVP, Full), false for custom
+//   - createdAt: ISO 8601 timestamp of creation
+//   - updatedAt: ISO 8601 timestamp of last update
+//   - description: (optional) Description of the profile
+//   - metadata: (optional) Custom metadata object
+//
+// Built-in Profiles:
+//   - MVP: Executes only required tasks (skips optional tasks marked with *)
+//   - Full: Executes all tasks including optional ones
+//
+// You can edit built-in profiles or create custom profiles.
+// Built-in profiles can be reset to defaults from the UI.
+//
+{
+  "$schema": "https://example.com/execution-profiles-schema.json",
+  "version": "1.0.0",
+  "profiles": [
+    {
+      "id": "mvp",
+      "name": "MVP (Required Tasks)",
+      "icon": "rocket",
+      "description": "Execute only required tasks to complete the minimum viable product",
+      "promptTemplate": "Execute the spec \"{{specName}}\" located at {{specPath}}.\n\nFocus on required tasks only (skip optional tasks marked with *).\n\nWorkspace: {{workspaceFolder}}\nTotal tasks: {{totalTasks}}\nCompleted: {{completedTasks}}\nRemaining: {{remainingTasks}}\n\nPlease execute all remaining required tasks in order.",
+      "isBuiltIn": true,
+      "createdAt": "2026-02-07T02:33:52.143Z",
+      "updatedAt": "2026-02-07T02:33:52.143Z"
+    },
+    {
+      "id": "full",
+      "name": "Full (All Tasks)",
+      "icon": "checklist",
+      "description": "Execute all tasks including optional ones for complete implementation",
+      "promptTemplate": "Execute the spec \"{{specName}}\" located at {{specPath}}.\n\nExecute ALL tasks including optional ones.\n\nWorkspace: {{workspaceFolder}}\nTotal tasks: {{totalTasks}}\nCompleted: {{completedTasks}}\nRemaining: {{remainingTasks}}\n\nPlease execute all remaining tasks in order, including optional tasks.",
+      "isBuiltIn": true,
+      "createdAt": "2026-02-07T02:33:52.143Z",
+      "updatedAt": "2026-02-07T02:33:52.143Z"
+    }
+  ]
+}

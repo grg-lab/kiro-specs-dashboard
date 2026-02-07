@@ -2,7 +2,7 @@
   "name": "kiro-specs-dashboard",
   "displayName": "Kiro Specs Dashboard",
   "description": "Extension for visualizing and tracking Kiro spec features and tasks.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "grg-lab",
   "author": {
     "name": "grg-lab"
@@ -29,11 +29,14 @@
     "ai",
     "specs",
     "spec-driven-development",
+    "spec driven",
     "dashboard",
     "tasks",
     "progress",
     "tracking",
-    "project-management"
+    "project-management",
+    "metrics",
+    "pulse"
   ],
   "activationEvents": [
     "onView:specs-dashboard.view",
@@ -46,27 +49,34 @@
       {
         "command": "specs-dashboard.show",
         "title": "Show Specs Dashboard",
-        "category": "Kiro"
+        "category": "Specs Dashboard"
       },
       {
         "command": "specs-dashboard.refresh",
         "title": "Refresh Specs Dashboard",
-        "category": "Kiro"
-      },
-      {
-        "command": "specs-dashboard.openFile",
-        "title": "Open Spec File",
-        "category": "Kiro"
+        "category": "Specs Dashboard"
       },
       {
         "command": "specs-dashboard.generateMockData",
         "title": "Generate Mock Velocity Data",
-        "category": "Kiro"
+        "category": "Specs Dashboard"
       },
       {
         "command": "specs-dashboard.clearVelocityData",
         "title": "Clear Velocity Data",
-        "category": "Kiro"
+        "category": "Specs Dashboard"
+      },
+      {
+        "command": "specs-dashboard.openProfiles",
+        "title": "Manage Profiles",
+        "category": "Specs Dashboard",
+        "icon": "$(person)"
+      },
+      {
+        "command": "specs-dashboard.openAnalytics",
+        "title": "Show Metrics",
+        "category": "Specs Dashboard",
+        "icon": "$(graph)"
       }
     ],
     "viewsContainers": {

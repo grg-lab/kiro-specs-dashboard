@@ -323,6 +323,34 @@ export class StateManager {
   }
 
   /**
+   * Get execution states for automated spec execution
+   * 
+   * Requirements: 5.5
+   */
+  async getExecutionStates(): Promise<Record<string, any>> {
+    try {
+      return this.workspaceState.get('executionStates', {});
+    } catch (error) {
+      console.error('Error loading execution states:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Save execution states for automated spec execution
+   * 
+   * Requirements: 5.5
+   */
+  async saveExecutionStates(states: Record<string, any>): Promise<void> {
+    try {
+      await this.workspaceState.update('executionStates', states);
+    } catch (error) {
+      console.error('Error saving execution states:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get the default dashboard state
    */
   private getDefaultState(): DashboardState {
