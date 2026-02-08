@@ -18,7 +18,7 @@
   "homepage": "https://github.com/grg-lab/kiro-specs-dashboard#readme",
   "icon": "media/icon.png",
   "engines": {
-    "vscode": "^1.74.0"
+    "vscode": "^1.75.0"
   },
   "categories": [
     "Other",
@@ -50,8 +50,6 @@
     "analytics"
   ],
   "activationEvents": [
-    "onView:specs-dashboard.view",
-    "onCommand:specs-dashboard.show",
     "workspaceContains:**/.kiro/specs/**/tasks.md"
   ],
   "main": "./out/extension.js",
@@ -65,7 +63,8 @@
       {
         "command": "specs-dashboard.refresh",
         "title": "Refresh Specs Dashboard",
-        "category": "Specs Dashboard"
+        "category": "Specs Dashboard",
+        "icon": "$(refresh)"
       },
       {
         "command": "specs-dashboard.generateMockData",
