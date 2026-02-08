@@ -39,6 +39,14 @@ This extension only reads and writes files in your workspace's `.kiro/specs/` di
 - **Notes Management**: Sort notes by recently updated, recently created, or oldest first with configurable pagination (10, 20, or show all)
 - **Notes Persistence**: Notes are saved per spec and persist across sessions with creation and update timestamps
 - **Metrics & Analytics**: Comprehensive velocity tracking and performance analytics with visual charts and insights
+- **Execution Profiles**: Create and manage custom execution profiles for automated spec execution
+  - Built-in profiles (MVP and Full) ready to use out of the box
+  - Create custom profiles with personalized prompt templates
+  - Use template variables ({{specName}}, {{specPath}}, {{totalTasks}}, etc.) for dynamic prompts
+  - Execute specs directly from the dashboard with one-click profile selection
+  - Share profiles with your team by committing `.kiro/execution-profiles.json` to version control
+  - Team-wide consistency: Everyone uses the same prompts and execution workflows
+  - Profile management UI for easy creation, editing, and deletion
 
 ## Getting Started
 

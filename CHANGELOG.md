@@ -17,8 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - File-based profile storage in `.kiro/execution-profiles.json`
 - **Direct Spec Execution**: Execute specs directly from the dashboard
   - Execute button on each spec card with profile selection dropdown
-  - Real-time execution status indicators (Running, Completed, Failed, Cancelled)
-  - Cancel execution button to stop running executions
   - Automatic task file watching for progress updates during execution
   - Execution state persistence across VSCode sessions
 - **New Commands**:
@@ -33,7 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced progress bar with 8px height, rounded corners, and diagonal stripe pattern for unfilled portion
   - Action buttons (Requirements, Design, Tasks, Notes) moved to bottom for consistent placement
   - Improved visual spacing and alignment throughout the card
-  - Removed execution status display for simplified UI (button remains consistent)
 - Enhanced dashboard header with Profiles action button
 - Improved spec card layout with execution controls section
 - Updated dashboard UI to show execution status on spec cards

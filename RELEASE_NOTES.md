@@ -14,11 +14,11 @@ Create and manage custom execution profiles to automate spec execution with tail
   - **MVP (Required Tasks)**: Executes only required tasks, skipping optional ones
   - **Full (All Tasks)**: Executes all tasks including optional ones
 - **Custom Profiles**: Create your own profiles with custom prompt templates
-- **Profile Editor**: Manage profiles through a dedicated panel accessible via "Manage Profiles" button
+- **Profile Editor**: Manage profiles through a dedicated panel accessible via "Profiles" button
 - **Template Variables**: Use placeholders like `{{specName}}`, `{{specPath}}`, `{{totalTasks}}`, etc. in prompt templates
 - **Multi-Workspace Support**: Profiles are workspace-scoped with automatic conflict resolution
 
-**Access:** Click the "Manage Profiles" button in the dashboard header or run command `Specs Dashboard: Manage Profiles`
+**Access:** Click the "Profiles" button in the dashboard header or run command `Specs Dashboard: Manage Profiles`
 
 #### **Direct Spec Execution from Dashboard**
 Execute specs directly from the dashboard with a single click.
@@ -30,8 +30,6 @@ Execute specs directly from the dashboard with a single click.
 4. Track execution status in real-time with visual indicators
 
 **Execution Features:**
-- **Real-time Status**: Visual indicators show Running, Completed, Failed, or Cancelled states
-- **Cancel Execution**: Stop running executions with the cancel button
 - **Task Progress Monitoring**: Automatic task file watching updates progress during execution
 
 ### 🎨 Improvements
