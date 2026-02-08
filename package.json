@@ -103,7 +103,8 @@
         {
           "id": "specs-dashboard.view",
           "name": "Dashboard",
-          "type": "webview"
+          "type": "webview",
+          "icon": "media/icon.svg"
         }
       ]
     }
