@@ -1,6 +1,6 @@
 # Kiro Specs Dashboard
 
-A native VSCode extension for visualizing and tracking Kiro spec features and tasks directly within your IDE.
+A native Kiro IDE extension for visualizing and tracking Kiro spec features and tasks directly within your IDE.
 
 ## ⚠️ Important Disclaimer
 
