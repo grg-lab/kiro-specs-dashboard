@@ -53,16 +53,6 @@
       "isBuiltIn": true,
       "createdAt": "2026-02-07T02:50:12.447Z",
       "updatedAt": "2026-02-07T02:50:12.447Z"
-    },
-    {
-      "id": "set-up-env",
-      "name": "Set up environment and dependencies",
-      "icon": "package",
-      "description": "Set up the environment and install dependencies",
-      "promptTemplate": "Run the tasks related with the set up of the environment",
-      "isBuiltIn": false,
-      "createdAt": "2026-02-07T16:31:22.610Z",
-      "updatedAt": "2026-02-07T16:31:38.991Z"
     }
   ]
 }

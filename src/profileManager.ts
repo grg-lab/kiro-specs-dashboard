@@ -348,7 +348,6 @@ export class ProfileManager {
       
       // Create profiles file with documentation
       const profilesFile: ProfilesFile = {
-        $schema: 'https://example.com/execution-profiles-schema.json',
         version: '1.0.0',
         profiles: this.getBuiltInProfiles()
       };
@@ -723,7 +722,6 @@ export class ProfileManager {
       await fs.mkdir(kiroDir, { recursive: true });
       
       const profilesFile: ProfilesFile = {
-        $schema: 'https://example.com/execution-profiles-schema.json',
         version: '1.0.0',
         profiles
       };
