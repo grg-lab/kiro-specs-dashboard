@@ -36,7 +36,18 @@
     "tracking",
     "project-management",
     "metrics",
-    "pulse"
+    "pulse",
+    "prompt",
+    "execution",
+    "saved-prompt",
+    "profiles",
+    "automation",
+    "workflow",
+    "templates",
+    "agent",
+    "productivity",
+    "velocity",
+    "analytics"
   ],
   "activationEvents": [
     "onView:specs-dashboard.view",
