@@ -4,6 +4,9 @@ A native Kiro IDE extension for visualizing and tracking Kiro spec features and 
 
 ## Screenshots
 
+<details>
+<summary>📸 View Screenshots</summary>
+
 ### Main Dashboard
 ![Main Dashboard](./media/screenshots/dashboard-overview.png)
 *Spec cards with progress tracking, status badges, and quick access buttons*
@@ -26,6 +29,8 @@ A native Kiro IDE extension for visualizing and tracking Kiro spec features and 
 ### Notes Panel
 ![Notes Panel](./media/screenshots/notes-panel.png)
 *Rich text editor for spec notes with formatting and organization*
+
+</details>
 
 ## ⚠️ Important Disclaimer
 
