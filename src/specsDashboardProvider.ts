@@ -1085,14 +1085,22 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
       if (isNowCompleted && !wasCompleted) {
         try {
           const taskId = `line-${taskLine}`;
+          
+          // Get Git author information
+          const { getFileAuthor } = await import('./gitUtils');
+          const author = await getFileAuthor(tasksUri.fsPath);
+          
           await this.velocityCalculator.recordTaskCompletion(
             specName,
             taskId,
             isRequired,
-            new Date()
+            new Date(),
+            line.trim().substring(0, 50),
+            author?.name,
+            author?.email
           );
           this.outputChannel.appendLine(
-            `[${new Date().toISOString()}] Recorded task completion for velocity tracking: ${specName}, ${isRequired ? 'required' : 'optional'}`
+            `[${new Date().toISOString()}] Recorded task completion for velocity tracking: ${specName}, ${isRequired ? 'required' : 'optional'}, author=${author?.name || 'unknown'}`
           );
         } catch (velocityError) {
           // Log error but don't fail the task toggle
@@ -1104,13 +1112,19 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
       
       // Update spec progress tracking (Requirements: 21.4, 21.5, 21.6)
       try {
+        // Get Git author information
+        const { getFileAuthor } = await import('./gitUtils');
+        const author = await getFileAuthor(tasksUri.fsPath);
+        
         await this.velocityCalculator.updateSpecProgress(
           specName,
           spec.totalTasks,
-          spec.completedTasks
+          spec.completedTasks,
+          author?.name,
+          author?.email
         );
         this.outputChannel.appendLine(
-          `[${new Date().toISOString()}] Updated spec progress tracking: ${specName} (${spec.completedTasks}/${spec.totalTasks})`
+          `[${new Date().toISOString()}] Updated spec progress tracking: ${specName} (${spec.completedTasks}/${spec.totalTasks}), author=${author?.name || 'unknown'}`
         );
       } catch (velocityError) {
         // Log error but don't fail the task toggle
@@ -2797,6 +2811,36 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
    */
   getSpecs(): Array<{ totalTasks: number; completedTasks: number }> {
     return this.specs;
+  }
+
+  /**
+   * Get the velocity calculator instance
+   * Used by migration command
+   * 
+   * @returns VelocityCalculator instance
+   */
+  getVelocityCalculator(): VelocityCalculator {
+    return this.velocityCalculator;
+  }
+
+  /**
+   * Get the output channel instance
+   * Used by migration command for logging
+   * 
+   * @returns OutputChannel instance
+   */
+  getOutputChannel(): vscode.OutputChannel {
+    return this.outputChannel;
+  }
+
+  /**
+   * Get spec scanner instance
+   * Used for direct spec scanning bypassing webview visibility checks
+   * 
+   * @returns SpecScanner instance
+   */
+  getScanner(): SpecScanner {
+    return this.scanner;
   }
 
   /**

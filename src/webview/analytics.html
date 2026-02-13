@@ -311,11 +311,19 @@
         .projection-section h3 {
             font-size: 14px;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
             color: var(--vscode-foreground);
             display: flex;
             align-items: center;
             gap: 6px;
+        }
+
+        .section-note {
+            font-size: 11px;
+            color: var(--vscode-foreground);
+            line-height: 1.5;
+            margin-bottom: 16px;
+            opacity: 0.8;
         }
 
         .info-icon {
@@ -327,6 +335,7 @@
             opacity: 0.7;
             transition: opacity 0.2s ease;
             margin-left: 4px;
+            font-size: 14px;
         }
 
         .info-icon:hover {
@@ -411,7 +420,7 @@
 
         .bar-chart-bar {
             flex: 1;
-            background: var(--vscode-progressBar-background);
+            background: var(--vscode-charts-orange);
             opacity: 0.7;
             border-radius: 2px 2px 0 0;
             position: relative;
@@ -967,6 +976,110 @@
             font-size: 11px;
         }
 
+        /* Team Metrics */
+        .team-metrics-section {
+            margin-bottom: 20px;
+        }
+
+        .team-metrics-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--vscode-foreground);
+            opacity: 0.9;
+        }
+
+        .team-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .team-member-card {
+            background: var(--vscode-sideBar-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 4px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .team-member-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .team-member-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .team-member-info {
+            flex: 1;
+        }
+
+        .team-member-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--vscode-foreground);
+        }
+
+        .team-member-note {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        .team-member-stats {
+            display: flex;
+            gap: 16px;
+            margin-top: 4px;
+        }
+
+        .team-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .team-stat-label {
+            font-size: 10px;
+            color: var(--vscode-descriptionForeground);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .team-stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            font-family: var(--vscode-editor-font-family);
+            color: var(--vscode-foreground);
+        }
+
+        .team-velocity-bar {
+            height: 4px;
+            background: var(--vscode-input-background);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .team-velocity-fill {
+            height: 100%;
+            background: var(--vscode-charts-blue);
+            transition: width 0.3s ease;
+        }
+
         /* Section Separator */
         .section-separator {
             height: 1px;
@@ -1118,12 +1231,28 @@
                 <!-- Separator -->
                 <div class="section-separator"></div>
 
+                <!-- Team Metrics -->
+                <div class="team-metrics-section" id="team-metrics-section" style="display: none;">
+                    <h3>
+                        👥 Team Performance
+                    </h3>
+                    <p class="section-note">Shows task and spec completion by team members based on Git commit history</p>
+                    <div class="team-metrics-content">
+                        <div class="team-stats-grid" id="team-stats-grid">
+                            <!-- Team member cards will be generated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Separator (only shown when team metrics are visible) -->
+                <div class="section-separator" id="team-separator" style="display: none;"></div>
+
                 <!-- Projection -->
                 <div class="projection-section">
                     <h3>
                         🔮 Projected Completion
-                        <span class="info-icon codicon codicon-info" title="Based on your 4-week average velocity and remaining tasks. Formula: Today + (Remaining Tasks ÷ Avg Velocity × 7 days). Updates as you complete more tasks."></span>
                     </h3>
+                    <p class="section-note">Based on your 4-week average velocity and remaining tasks. Formula: Today + (Remaining Tasks ÷ Avg Velocity × 7 days). Updates as you complete more tasks.</p>
                     <div class="projection-content">
                         <div class="projection-date" id="projectionDate">
                             No projection available
@@ -1582,6 +1711,24 @@
             if (metrics.specTimelines) {
                 renderSpecTimeline(metrics.specTimelines);
             }
+            
+            // Render team metrics
+            if (metrics.teamMetrics) {
+                renderTeamMetrics(metrics.teamMetrics);
+            }
+        }
+        
+        /**
+         * Get the start of the week (Monday) for a given date
+         */
+        function getWeekStart(date) {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            d.setDate(diff);
+            d.setHours(0, 0, 0, 0);
+            return d;
         }
         
         /**
@@ -1649,15 +1796,24 @@
             }
             
             const maxValue = Math.max(...data, 1);
-            const currentWeekIndex = data.length - 1;
+            
+            // Get week start dates from metrics if available
+            const weekStartDates = metrics.weekStartDates || [];
+            const currentDate = new Date();
+            const currentWeekStart = getWeekStart(currentDate);
             
             // Create bars
             data.forEach((value, index) => {
                 const bar = document.createElement('div');
                 bar.className = 'bar-chart-bar';
                 
+                // Determine if this is the current week
+                const dataIndex = allData.length - data.length + index;
+                const weekStart = weekStartDates[dataIndex] ? new Date(weekStartDates[dataIndex]) : null;
+                const isCurrentWeek = weekStart && weekStart.getTime() === currentWeekStart.getTime();
+                
                 // Highlight current week
-                if (index === currentWeekIndex) {
+                if (isCurrentWeek) {
                     bar.classList.add('current-week');
                 }
                 
@@ -1668,7 +1824,16 @@
                 // Add tooltip
                 const tooltip = document.createElement('div');
                 tooltip.className = 'bar-tooltip';
-                const weekLabel = index === currentWeekIndex ? 'This week' : `${data.length - index} weeks ago`;
+                let weekLabel;
+                if (isCurrentWeek) {
+                    weekLabel = 'This week';
+                } else if (weekStart) {
+                    const weeksDiff = Math.round((currentWeekStart.getTime() - weekStart.getTime()) / (7 * 24 * 60 * 60 * 1000));
+                    weekLabel = weeksDiff === 1 ? 'Last week' : `${weeksDiff} weeks ago`;
+                } else {
+                    // Fallback if no date info
+                    weekLabel = index === data.length - 1 ? 'Latest' : `W${index + 1}`;
+                }
                 tooltip.textContent = `${weekLabel}: ${value} tasks`;
                 bar.appendChild(tooltip);
                 
@@ -2209,6 +2374,79 @@
                 
                 // Hide day if no visible events
                 day.style.display = visibleCount > 0 ? 'block' : 'none';
+            });
+        }
+
+        /**
+         * Render team metrics showing per-author statistics
+         */
+        function renderTeamMetrics(teamMetrics) {
+            const section = document.getElementById('team-metrics-section');
+            const separator = document.getElementById('team-separator');
+            const container = document.getElementById('team-stats-grid');
+            
+            if (!container || !teamMetrics || !teamMetrics.authors || teamMetrics.authors.length === 0) {
+                if (section) section.style.display = 'none';
+                if (separator) separator.style.display = 'none';
+                return;
+            }
+            
+            // Show section
+            if (section) section.style.display = 'block';
+            if (separator) separator.style.display = 'block';
+            
+            container.innerHTML = '';
+            
+            // Find max velocity for scaling bars
+            const maxVelocity = Math.max(...Object.values(teamMetrics.velocityByAuthor));
+            
+            // Create card for each author
+            teamMetrics.authors.forEach(author => {
+                const tasks = teamMetrics.tasksByAuthor[author] || 0;
+                const specs = teamMetrics.specsByAuthor[author] || 0;
+                const velocity = teamMetrics.velocityByAuthor[author] || 0;
+                
+                const card = document.createElement('div');
+                card.className = 'team-member-card';
+                
+                // Get initials for avatar
+                const initials = author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                
+                // Calculate velocity bar width
+                const velocityPercent = maxVelocity > 0 ? (velocity / maxVelocity * 100) : 0;
+                
+                // Check if this is the "unknown" author (uncommitted tasks)
+                const isUnknown = author.toLowerCase() === 'unknown';
+                const authorNote = isUnknown ? '<div class="team-member-note">Tasks without Git commit data</div>' : '';
+                
+                card.innerHTML = `
+                    <div class="team-member-header">
+                        <div class="team-member-avatar">${initials}</div>
+                        <div class="team-member-info">
+                            <div class="team-member-name">${author}</div>
+                            ${authorNote}
+                        </div>
+                    </div>
+                    <div class="team-member-stats">
+                        <div class="team-stat">
+                            <div class="team-stat-label">Tasks</div>
+                            <div class="team-stat-value">${tasks}</div>
+                        </div>
+                        <div class="team-stat">
+                            <div class="team-stat-label">Specs</div>
+                            <div class="team-stat-value">${specs}</div>
+                        </div>
+                        <div class="team-stat">
+                            <div class="team-stat-label">Velocity</div>
+                            <div class="team-stat-value">${velocity.toFixed(1)}</div>
+                        </div>
+                    </div>
+                    <div class="team-velocity-bar">
+                        <div class="team-velocity-fill" style="width: ${velocityPercent}%"></div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
             });
         }
 

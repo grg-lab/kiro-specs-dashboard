@@ -65,6 +65,8 @@ export class VelocityCalculator {
    * @param isRequired Whether the task is required (not optional)
    * @param timestamp The completion timestamp (defaults to now)
    * @param taskDescription Optional task description (first 50 chars)
+   * @param author Optional author information (name)
+   * @param authorEmail Optional author email
    * 
    * Requirements: 19.1, 19.2, Timeline Feature
    */
@@ -73,13 +75,22 @@ export class VelocityCalculator {
     taskId: string,
     isRequired: boolean,
     timestamp: Date = new Date(),
-    taskDescription?: string
+    taskDescription?: string,
+    author?: string,
+    authorEmail?: string
   ): Promise<void> {
-    console.log(`[VelocityCalculator] Recording task completion: ${specName}, ${taskId}, required=${isRequired}, timestamp=${timestamp.toISOString()}`);
-    
     // Update weekly tasks
     const weekStart = this.getWeekStart(timestamp);
-    console.log(`[VelocityCalculator] Week start: ${weekStart.toISOString()}`);
+    
+    // Debug: Log the week calculation
+    console.log(`[VelocityCalculator] Recording task for ${specName}:`, {
+      timestamp: timestamp.toISOString(),
+      weekStart: weekStart.toISOString(),
+      existingWeeks: this.velocityData.weeklyTasks.map(w => ({
+        start: w.weekStart.toISOString(),
+        completed: w.completed
+      }))
+    });
     
     const weekData = this.getOrCreateWeekData(weekStart);
     weekData.completed++;
@@ -88,20 +99,24 @@ export class VelocityCalculator {
     } else {
       weekData.optional++;
     }
-    console.log(`[VelocityCalculator] Week data updated: completed=${weekData.completed}, required=${weekData.required}, optional=${weekData.optional}`);
+    
+    // Track by author
+    if (author) {
+      if (!weekData.byAuthor) {
+        weekData.byAuthor = {};
+      }
+      weekData.byAuthor[author] = (weekData.byAuthor[author] || 0) + 1;
+    }
 
     // Update day of week
     const dayName = this.getDayName(timestamp);
     this.velocityData.dayOfWeekTasks[dayName]++;
-    console.log(`[VelocityCalculator] Day of week updated: ${dayName}=${this.velocityData.dayOfWeekTasks[dayName]}`);
 
     // Update spec activity
     this.updateSpecActivity(specName, timestamp);
-    console.log(`[VelocityCalculator] Spec activity updated for: ${specName}`);
 
     // Record daily task count (for heatmap)
     this.recordDailyTaskCount(timestamp, isRequired);
-    console.log(`[VelocityCalculator] Daily task count recorded`);
 
     // Record task completion event (for activity stream)
     this.recordTaskCompletionEvent({
@@ -109,18 +124,13 @@ export class VelocityCalculator {
       specName,
       taskId,
       taskDescription: taskDescription ? taskDescription.substring(0, 50) : undefined,
-      isRequired
+      isRequired,
+      author,
+      authorEmail
     });
-    console.log(`[VelocityCalculator] Task completion event recorded`);
 
     // Persist to state
-    console.log(`[VelocityCalculator] Persisting velocity data...`);
     await this.persistVelocityData();
-    console.log(`[VelocityCalculator] Velocity data persisted successfully`);
-    
-    // Log summary
-    console.log(`[VelocityCalculator] Total weekly tasks: ${this.velocityData.weeklyTasks.length} weeks`);
-    console.log(`[VelocityCalculator] Total specs tracked: ${Object.keys(this.velocityData.specActivity).length}`);
   }
 
   /**
@@ -136,6 +146,8 @@ export class VelocityCalculator {
    * @param totalTasks Total number of tasks in the spec
    * @param completedTasks Number of completed tasks
    * @param timestamp The completion timestamp (defaults to now)
+   * @param author Optional author information (name)
+   * @param authorEmail Optional author email
    * 
    * Requirements: 21.4, 21.5, 21.6, Timeline Feature
    */
@@ -143,7 +155,9 @@ export class VelocityCalculator {
     specName: string,
     totalTasks: number,
     completedTasks: number,
-    timestamp: Date = new Date()
+    timestamp: Date = new Date(),
+    author?: string,
+    authorEmail?: string
   ): Promise<void> {
     // Update spec activity
     if (!this.velocityData.specActivity[specName]) {
@@ -166,12 +180,22 @@ export class VelocityCalculator {
     const weekData = this.getOrCreateSpecWeekData(weekStart);
     weekData.completed++;
     
+    // Track by author
+    if (author) {
+      if (!weekData.byAuthor) {
+        weekData.byAuthor = {};
+      }
+      weekData.byAuthor[author] = (weekData.byAuthor[author] || 0) + 1;
+    }
+    
     // Record spec lifecycle event
     this.recordSpecLifecycleEvent({
       specName,
       eventType: 'completed',
       timestamp,
-      progress: 100
+      progress: 100,
+      author,
+      authorEmail
     });
     
     // Persist to state
@@ -194,7 +218,9 @@ export class VelocityCalculator {
   async updateSpecProgress(
     specName: string,
     totalTasks: number,
-    completedTasks: number
+    completedTasks: number,
+    author?: string,
+    authorEmail?: string
   ): Promise<void> {
     if (!this.velocityData.specActivity[specName]) {
       this.velocityData.specActivity[specName] = {
@@ -215,7 +241,7 @@ export class VelocityCalculator {
     
     // If spec just reached 100%, record completion
     if (isNowCompleted && !wasCompleted) {
-      await this.recordSpecCompletion(specName, totalTasks, completedTasks);
+      await this.recordSpecCompletion(specName, totalTasks, completedTasks, new Date(), author, authorEmail);
     }
     // If spec was completed but is no longer (task unchecked), clear completion date
     else if (!isNowCompleted && wasCompleted) {
@@ -224,11 +250,21 @@ export class VelocityCalculator {
       // Decrement weekly spec count
       if (previousCompletionDate) {
         const weekStart = this.getWeekStart(previousCompletionDate);
-        const weekData = this.velocityData.weeklySpecs.find(
-          w => w.weekStart.getTime() === weekStart.getTime()
-        );
+        const normalizedWeekStart = new Date(weekStart);
+        normalizedWeekStart.setHours(0, 0, 0, 0);
+        
+        const weekData = this.velocityData.weeklySpecs.find(w => {
+          const existingWeekStart = new Date(w.weekStart);
+          existingWeekStart.setHours(0, 0, 0, 0);
+          return existingWeekStart.getTime() === normalizedWeekStart.getTime();
+        });
+        
         if (weekData && weekData.completed > 0) {
           weekData.completed--;
+          // Also decrement author count if available
+          if (author && weekData.byAuthor && weekData.byAuthor[author] > 0) {
+            weekData.byAuthor[author]--;
+          }
         }
       }
     }
@@ -238,25 +274,45 @@ export class VelocityCalculator {
 
   /**
    * Get tasks completed per week for the last N weeks
+   * Returns data aligned with calendar weeks (ending with current week)
    * 
    * Requirements: 21.1
    */
   getTasksPerWeek(weeks: number): number[] {
     const result: number[] = [];
-    const sortedWeeks = [...this.velocityData.weeklyTasks].sort(
-      (a, b) => a.weekStart.getTime() - b.weekStart.getTime()
-    );
+    const currentWeekStart = this.getWeekStart(new Date());
     
-    // Get the last N weeks
-    const recentWeeks = sortedWeeks.slice(-weeks);
-    
-    for (const week of recentWeeks) {
-      result.push(week.completed);
+    // Generate the last N weeks, ending with current week
+    for (let i = weeks - 1; i >= 0; i--) {
+      const weekStart = new Date(currentWeekStart);
+      weekStart.setDate(weekStart.getDate() - (i * 7));
+      
+      // Find data for this specific week
+      const weekData = this.velocityData.weeklyTasks.find(w => {
+        const wStart = new Date(w.weekStart);
+        wStart.setHours(0, 0, 0, 0);
+        return wStart.getTime() === weekStart.getTime();
+      });
+      
+      result.push(weekData ? weekData.completed : 0);
     }
     
-    // Pad with zeros if we don't have enough data
-    while (result.length < weeks) {
-      result.unshift(0);
+    return result;
+  }
+
+  /**
+   * Get week start dates for the last N weeks
+   * Returns ISO date strings for each week, always ending with current week
+   */
+  getWeekStartDates(weeks: number): string[] {
+    const result: string[] = [];
+    const currentWeekStart = this.getWeekStart(new Date());
+    
+    // Generate the last N weeks, ending with current week
+    for (let i = weeks - 1; i >= 0; i--) {
+      const weekStart = new Date(currentWeekStart);
+      weekStart.setDate(weekStart.getDate() - (i * 7));
+      result.push(weekStart.toISOString());
     }
     
     return result;
@@ -296,11 +352,13 @@ export class VelocityCalculator {
 
   /**
    * Calculate consistency score based on standard deviation
+   * Uses last 10 calendar weeks to match the chart display
    * 
    * Requirements: 21.9
    */
   calculateConsistencyScore(): number {
-    const tasks = this.getTasksPerWeek(8);
+    // Use last 10 calendar weeks to measure consistency over time
+    const tasks = this.getTasksPerWeek(10);
     
     if (tasks.length === 0) {
       return 0;
@@ -309,7 +367,7 @@ export class VelocityCalculator {
     const mean = tasks.reduce((a, b) => a + b, 0) / tasks.length;
     
     if (mean === 0) {
-      return 100; // Perfect consistency if no tasks
+      return 0; // No tasks = no consistency to measure
     }
     
     const variance = tasks.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / tasks.length;
@@ -366,20 +424,21 @@ export class VelocityCalculator {
    */
   getSpecsPerWeek(weeks: number): number[] {
     const result: number[] = [];
-    const sortedWeeks = [...this.velocityData.weeklySpecs].sort(
-      (a, b) => a.weekStart.getTime() - b.weekStart.getTime()
-    );
+    const currentWeekStart = this.getWeekStart(new Date());
     
-    // Get the last N weeks
-    const recentWeeks = sortedWeeks.slice(-weeks);
-    
-    for (const week of recentWeeks) {
-      result.push(week.completed);
-    }
-    
-    // Pad with zeros if we don't have enough data
-    while (result.length < weeks) {
-      result.unshift(0);
+    // Generate the last N weeks, ending with current week
+    for (let i = weeks - 1; i >= 0; i--) {
+      const weekStart = new Date(currentWeekStart);
+      weekStart.setDate(weekStart.getDate() - (i * 7));
+      
+      // Find data for this specific week
+      const weekData = this.velocityData.weeklySpecs.find(w => {
+        const wStart = new Date(w.weekStart);
+        wStart.setHours(0, 0, 0, 0);
+        return wStart.getTime() === weekStart.getTime();
+      });
+      
+      result.push(weekData ? weekData.completed : 0);
     }
     
     return result;
@@ -665,6 +724,7 @@ export class VelocityCalculator {
     const metrics = {
       // Tasks metrics
       tasksPerWeek: this.getTasksPerWeek(12),
+      weekStartDates: this.getWeekStartDates(12),
       currentWeekTasks: this.getCurrentWeekTasks(),
       lastWeekTasks: this.getLastWeekTasks(),
       velocityTrend: this.calculateTrend(),
@@ -691,7 +751,10 @@ export class VelocityCalculator {
       // Timeline feature data
       dailyActivity: this.getDailyTaskCounts(84), // Last 12 weeks
       recentEvents: this.getRecentTaskEvents(100),
-      specTimelines: this.getSpecTimelines()
+      specTimelines: this.getSpecTimelines(),
+      
+      // Team metrics
+      teamMetrics: this.calculateTeamMetrics()
     };
     
     console.log(`[VelocityCalculator] Calculated metrics:`, {
@@ -706,6 +769,63 @@ export class VelocityCalculator {
     });
     
     return metrics;
+  }
+
+  /**
+   * Calculate team-level metrics from author data
+   * 
+   * @returns Team metrics including per-author statistics
+   */
+  private calculateTeamMetrics(): {
+    authors: string[];
+    tasksByAuthor: { [author: string]: number };
+    specsByAuthor: { [author: string]: number };
+    velocityByAuthor: { [author: string]: number };
+  } {
+    const tasksByAuthor: { [author: string]: number } = {};
+    const specsByAuthor: { [author: string]: number } = {};
+    const authors = new Set<string>();
+
+    // Aggregate tasks by author from weekly data
+    for (const weekData of this.velocityData.weeklyTasks) {
+      if (weekData.byAuthor) {
+        for (const [author, count] of Object.entries(weekData.byAuthor)) {
+          authors.add(author);
+          tasksByAuthor[author] = (tasksByAuthor[author] || 0) + count;
+        }
+      }
+    }
+
+    // Aggregate specs by author from weekly spec data
+    for (const weekData of this.velocityData.weeklySpecs) {
+      if (weekData.byAuthor) {
+        for (const [author, count] of Object.entries(weekData.byAuthor)) {
+          authors.add(author);
+          specsByAuthor[author] = (specsByAuthor[author] || 0) + count;
+        }
+      }
+    }
+
+    // Calculate velocity per author (tasks per week over last 4 weeks)
+    const velocityByAuthor: { [author: string]: number } = {};
+    const recentWeeks = this.velocityData.weeklyTasks.slice(-4);
+    
+    for (const author of authors) {
+      let totalTasks = 0;
+      for (const weekData of recentWeeks) {
+        if (weekData.byAuthor && weekData.byAuthor[author]) {
+          totalTasks += weekData.byAuthor[author];
+        }
+      }
+      velocityByAuthor[author] = recentWeeks.length > 0 ? totalTasks / recentWeeks.length : 0;
+    }
+
+    return {
+      authors: Array.from(authors).sort(),
+      tasksByAuthor,
+      specsByAuthor,
+      velocityByAuthor
+    };
   }
 
   /**
@@ -788,27 +908,29 @@ export class VelocityCalculator {
   /**
    * Calculate consistency score for specs
    * Measures how consistent spec completion is week-over-week
+   * Uses last 10 calendar weeks to match the chart display
    */
   private calculateSpecsConsistencyScore(): number {
-    if (this.velocityData.weeklySpecs.length < 2) {
+    // Get last 10 calendar weeks of data
+    const specsPerWeek = this.getSpecsPerWeek(10);
+    
+    if (specsPerWeek.length < 2) {
       return 0;
     }
     
-    const recentWeeks = this.velocityData.weeklySpecs.slice(-8); // Last 8 weeks
-    const values = recentWeeks.map(w => w.completed);
-    
     // Calculate standard deviation
-    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-    const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
-    const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
+    const mean = specsPerWeek.reduce((sum, val) => sum + val, 0) / specsPerWeek.length;
+    
+    if (mean === 0) {
+      return 0; // No specs completed, no consistency
+    }
+    
+    const squaredDiffs = specsPerWeek.map(val => Math.pow(val - mean, 2));
+    const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / specsPerWeek.length;
     const stdDev = Math.sqrt(variance);
     
     // Convert to consistency score (0-100)
     // Lower std dev = higher consistency
-    if (mean === 0) {
-      return 0;
-    }
-    
     const coefficientOfVariation = stdDev / mean;
     const consistencyScore = Math.max(0, Math.min(100, 100 - (coefficientOfVariation * 100)));
     
@@ -834,16 +956,24 @@ export class VelocityCalculator {
    * Get or create week data for a given week start
    */
   private getOrCreateWeekData(weekStart: Date): WeeklyTaskData {
-    let weekData = this.velocityData.weeklyTasks.find(
-      w => w.weekStart.getTime() === weekStart.getTime()
-    );
+    // Normalize the weekStart to ensure consistent comparison
+    const normalizedWeekStart = new Date(weekStart);
+    normalizedWeekStart.setHours(0, 0, 0, 0);
+    
+    // Find existing week data by comparing normalized dates
+    let weekData = this.velocityData.weeklyTasks.find(w => {
+      const existingWeekStart = new Date(w.weekStart);
+      existingWeekStart.setHours(0, 0, 0, 0);
+      return existingWeekStart.getTime() === normalizedWeekStart.getTime();
+    });
     
     if (!weekData) {
-      const weekEnd = new Date(weekStart);
+      const weekEnd = new Date(normalizedWeekStart);
       weekEnd.setDate(weekEnd.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
       
       weekData = {
-        weekStart,
+        weekStart: normalizedWeekStart,
         weekEnd,
         completed: 0,
         required: 0,
@@ -860,16 +990,24 @@ export class VelocityCalculator {
    * Get or create spec week data for a given week start
    */
   private getOrCreateSpecWeekData(weekStart: Date): WeeklySpecData {
-    let weekData = this.velocityData.weeklySpecs.find(
-      w => w.weekStart.getTime() === weekStart.getTime()
-    );
+    // Normalize the weekStart to ensure consistent comparison
+    const normalizedWeekStart = new Date(weekStart);
+    normalizedWeekStart.setHours(0, 0, 0, 0);
+    
+    // Find existing week data by comparing normalized dates
+    let weekData = this.velocityData.weeklySpecs.find(w => {
+      const existingWeekStart = new Date(w.weekStart);
+      existingWeekStart.setHours(0, 0, 0, 0);
+      return existingWeekStart.getTime() === normalizedWeekStart.getTime();
+    });
     
     if (!weekData) {
-      const weekEnd = new Date(weekStart);
+      const weekEnd = new Date(normalizedWeekStart);
       weekEnd.setDate(weekEnd.getDate() + 6);
+      weekEnd.setHours(23, 59, 59, 999);
       
       weekData = {
-        weekStart,
+        weekStart: normalizedWeekStart,
         weekEnd,
         completed: 0,
         started: 0
@@ -886,11 +1024,12 @@ export class VelocityCalculator {
    */
   private getWeekStart(date: Date): Date {
     const d = new Date(date);
+    d.setHours(0, 0, 0, 0); // Normalize to start of day first
     const day = d.getDay();
     const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-    const weekStart = new Date(d.setDate(diff));
-    weekStart.setHours(0, 0, 0, 0);
-    return weekStart;
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0); // Ensure normalized
+    return d;
   }
 
   /**
@@ -950,6 +1089,15 @@ export class VelocityCalculator {
    */
   private async persistVelocityData(): Promise<void> {
     await this.stateManager.saveVelocityData(this.velocityData);
+  }
+
+  /**
+   * Reset velocity data to default (empty) state
+   * Used before migration to ensure clean import
+   */
+  async resetVelocityData(): Promise<void> {
+    this.velocityData = this.getDefaultVelocityData();
+    await this.persistVelocityData();
   }
 
   /**

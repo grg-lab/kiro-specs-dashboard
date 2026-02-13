@@ -69,6 +69,7 @@
 
         .button-row {
             display: flex;
+            gap: 8px;
             border-radius: 4px;
             overflow: hidden;
             width: 100%;
@@ -79,7 +80,7 @@
             color: var(--vscode-button-foreground);
             border: none;
             padding: 8px 12px;
-            border-radius: 0;
+            border-radius: 4px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
@@ -87,7 +88,6 @@
             gap: 6px;
             font-size: 11px;
             font-family: var(--vscode-font-family);
-            border-right: 1px solid rgba(0, 0, 0, 0.2);
             flex: 1;
         }
 
@@ -2134,64 +2134,71 @@
             }
         }
         
-        // Setup filter event listeners
+        // Setup filter event listeners (only once)
+        let filtersInitialized = false;
+        
         function setupFilters() {
             const searchInput = document.getElementById('search');
             const filterButtons = document.querySelectorAll('.filter-btn');
             const itemsPerPageSelect = document.getElementById('itemsPerPage');
             
-            // Restore filter values from state
+            // Only attach event listeners once
+            if (!filtersInitialized) {
+                searchInput.addEventListener('input', (e) => {
+                    currentState.searchQuery = e.target.value;
+                    currentState.currentPage = 1;
+                    saveState();
+                    applyFilters();
+                });
+                
+                filterButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        filterButtons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        currentState.filterMode = btn.getAttribute('data-filter');
+                        currentState.currentPage = 1;
+                        saveState();
+                        applyFilters();
+                    });
+                });
+                
+                // Analytics button click handler
+                const analyticsBtn = document.getElementById('analyticsBtn');
+                if (analyticsBtn) {
+                    analyticsBtn.addEventListener('click', () => {
+                        vscode.postMessage({ type: 'openAnalytics' });
+                    });
+                }
+                
+                // Manage Profiles button click handler
+                const manageProfilesBtn = document.getElementById('manageProfilesBtn');
+                if (manageProfilesBtn) {
+                    manageProfilesBtn.addEventListener('click', () => {
+                        vscode.postMessage({ type: 'openProfiles' });
+                    });
+                }
+                
+                itemsPerPageSelect.addEventListener('change', (e) => {
+                    currentState.itemsPerPage = e.target.value === 'all' ? 'all' : parseInt(e.target.value);
+                    currentState.currentPage = 1;
+                    saveState();
+                    displayPage(1);
+                });
+                
+                filtersInitialized = true;
+            }
+            
+            // Always restore filter values from state (on every call)
             searchInput.value = currentState.searchQuery;
             itemsPerPageSelect.value = currentState.itemsPerPage;
             
-            // Update active filter button
+            // Always update active filter button to match current state
             filterButtons.forEach(btn => {
                 if (btn.getAttribute('data-filter') === currentState.filterMode) {
                     btn.classList.add('active');
                 } else {
                     btn.classList.remove('active');
                 }
-            });
-            
-            searchInput.addEventListener('input', (e) => {
-                currentState.searchQuery = e.target.value;
-                currentState.currentPage = 1;
-                saveState();
-                applyFilters();
-            });
-            
-            filterButtons.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    filterButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentState.filterMode = btn.getAttribute('data-filter');
-                    currentState.currentPage = 1;
-                    saveState();
-                    applyFilters();
-                });
-            });
-            
-            // Analytics button click handler
-            const analyticsBtn = document.getElementById('analyticsBtn');
-            if (analyticsBtn) {
-                analyticsBtn.addEventListener('click', () => {
-                    vscode.postMessage({ type: 'openAnalytics' });
-                });
-            }
-            
-            // Manage Profiles button click handler
-            const manageProfilesBtn = document.getElementById('manageProfilesBtn');
-            if (manageProfilesBtn) {
-                manageProfilesBtn.addEventListener('click', () => {
-                    vscode.postMessage({ type: 'openProfiles' });
-                });
-            }
-            
-            itemsPerPageSelect.addEventListener('change', (e) => {
-                currentState.itemsPerPage = e.target.value === 'all' ? 'all' : parseInt(e.target.value);
-                currentState.currentPage = 1;
-                saveState();
-                displayPage(1);
             });
         }
         

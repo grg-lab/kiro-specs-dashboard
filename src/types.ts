@@ -101,6 +101,7 @@ export interface WeeklyTaskData {
   completed: number;      // Tasks completed this week
   required: number;       // Required tasks completed
   optional: number;       // Optional tasks completed
+  byAuthor?: { [author: string]: number }; // Tasks per author
 }
 
 /**
@@ -111,6 +112,7 @@ export interface WeeklySpecData {
   weekEnd: Date;
   completed: number;      // Specs that reached 100%
   started: number;        // Specs that had first task completed
+  byAuthor?: { [author: string]: number }; // Specs per author
 }
 
 /**
@@ -160,6 +162,8 @@ export interface TaskCompletionEvent {
   taskId: string;
   taskDescription?: string;  // First 50 chars of task text
   isRequired: boolean;
+  author?: string;           // Git author who completed the task
+  authorEmail?: string;      // Git author email
 }
 
 /**
@@ -172,6 +176,8 @@ export interface SpecLifecycleEvent {
   eventType: 'started' | 'completed' | 'milestone';
   timestamp: Date;
   progress?: number;     // For milestone events
+  author?: string;       // Git author who triggered the event
+  authorEmail?: string;  // Git author email
 }
 
 /**
@@ -202,6 +208,7 @@ export interface VelocityData {
 export interface VelocityMetrics {
   // Core metrics
   tasksPerWeek: number[];              // Last 12 weeks
+  weekStartDates: string[];            // ISO date strings for each week
   currentWeekTasks: number;
   lastWeekTasks: number;
   velocityTrend: number;               // Percentage change
@@ -247,6 +254,14 @@ export interface VelocityMetrics {
     totalTasks: number;
     completedTasks: number;
   }>;
+  
+  // Team metrics
+  teamMetrics?: {
+    authors: string[];                 // List of all authors
+    tasksByAuthor: { [author: string]: number };
+    specsByAuthor: { [author: string]: number };
+    velocityByAuthor: { [author: string]: number }; // Tasks per week
+  };
 }
 
 /**

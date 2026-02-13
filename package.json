@@ -2,7 +2,7 @@
   "name": "kiro-specs-dashboard",
   "displayName": "Kiro Specs Dashboard",
   "description": "Extension for visualizing and tracking Kiro spec features and tasks.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "grg-lab",
   "author": {
     "name": "grg-lab"
@@ -77,6 +77,11 @@
         "category": "Specs Dashboard"
       },
       {
+        "command": "specs-dashboard.migrateVelocityData",
+        "title": "Import Velocity Data from Git History",
+        "category": "Specs Dashboard"
+      },
+      {
         "command": "specs-dashboard.openProfiles",
         "title": "Manage Profiles",
         "category": "Specs Dashboard",
@@ -107,6 +112,16 @@
           "icon": "media/icon.svg"
         }
       ]
+    },
+    "configuration": {
+      "title": "Kiro Specs Dashboard",
+      "properties": {
+        "kiroSpecsDashboard.autoImportGitData": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically import velocity data from Git history when opening a workspace for the first time"
+        }
+      }
     }
   },
   "scripts": {

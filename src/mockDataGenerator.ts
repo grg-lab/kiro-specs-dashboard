@@ -11,6 +11,10 @@ import { StateManager } from './stateManager';
  * - Spec lifecycle events for timeline
  */
 export async function generateMockVelocityData(stateManager: StateManager): Promise<void> {
+    // Mock team members
+    const teamMembers = ['Alice Johnson', 'Bob Smith', 'Carol Davis', 'David Wilson'];
+    const teamEmails = ['alice@example.com', 'bob@example.com', 'carol@example.com', 'david@example.com'];
+    
     const mockData = {
         weeklyTasks: [] as any[],
         weeklySpecs: [] as any[],
@@ -53,12 +57,29 @@ export async function generateMockVelocityData(stateManager: StateManager): Prom
         const required = Math.floor(completed * 0.7);
         const optional = completed - required;
         
+        const byAuthor: { [author: string]: number } = {};
+        
+        // Distribute tasks among team members
+        let remainingTasks = completed;
+        teamMembers.forEach((member, index) => {
+            if (index === teamMembers.length - 1) {
+                // Last member gets remaining tasks
+                byAuthor[member] = remainingTasks;
+            } else {
+                // Random distribution
+                const memberTasks = Math.floor(Math.random() * (remainingTasks / 2));
+                byAuthor[member] = memberTasks;
+                remainingTasks -= memberTasks;
+            }
+        });
+        
         mockData.weeklyTasks.push({
             weekStart: weekStart.toISOString(),
             weekEnd: weekEnd.toISOString(),
             completed,
             required,
-            optional
+            optional,
+            byAuthor
         });
         
         // Generate daily data for this week
@@ -91,6 +112,9 @@ export async function generateMockVelocityData(stateManager: StateManager): Prom
                     timestamp.setMinutes(Math.floor(Math.random() * 60));
                     
                     const specName = specNames[Math.floor(Math.random() * specNames.length)];
+                    const author = teamMembers[Math.floor(Math.random() * teamMembers.length)];
+                    const authorEmail = teamEmails[teamMembers.indexOf(author)];
+                    
                     const taskDescriptions = [
                         'Implement login functionality',
                         'Add user authentication',
@@ -109,7 +133,9 @@ export async function generateMockVelocityData(stateManager: StateManager): Prom
                         specName,
                         taskId: `task-${week}-${day}-${t}`,
                         taskDescription: taskDescriptions[Math.floor(Math.random() * taskDescriptions.length)],
-                        isRequired: t < dailyRequired
+                        isRequired: t < dailyRequired,
+                        author,
+                        authorEmail
                     });
                 }
             }
@@ -125,11 +151,22 @@ export async function generateMockVelocityData(stateManager: StateManager): Prom
             specsCompleted = Math.random() < 0.7 ? 1 : 2;
         }
         
+        const specsByAuthor: { [author: string]: number } = {};
+        
+        // Distribute specs among team members
+        if (specsCompleted > 0) {
+            for (let s = 0; s < specsCompleted; s++) {
+                const author = teamMembers[Math.floor(Math.random() * teamMembers.length)];
+                specsByAuthor[author] = (specsByAuthor[author] || 0) + 1;
+            }
+        }
+        
         mockData.weeklySpecs.push({
             weekStart: weekStart.toISOString(),
             weekEnd: weekEnd.toISOString(),
             completed: specsCompleted,
-            started: 0
+            started: 0,
+            byAuthor: specsByAuthor
         });
     }
     
@@ -173,11 +210,16 @@ export async function generateMockVelocityData(stateManager: StateManager): Prom
         };
         
         // Add lifecycle events
+        const author = teamMembers[Math.floor(Math.random() * teamMembers.length)];
+        const authorEmail = teamEmails[teamMembers.indexOf(author)];
+        
         mockData.specLifecycleEvents.push({
             specName,
             eventType: 'started',
             timestamp: startDate.toISOString(),
-            progress: 0
+            progress: 0,
+            author,
+            authorEmail
         });
         
         if (isCompleted) {
@@ -185,7 +227,9 @@ export async function generateMockVelocityData(stateManager: StateManager): Prom
                 specName,
                 eventType: 'completed',
                 timestamp: completionDate!.toISOString(),
-                progress: 100
+                progress: 100,
+                author,
+                authorEmail
             });
         }
     });

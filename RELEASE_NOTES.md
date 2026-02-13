@@ -1,5 +1,77 @@
 # Release Notes
 
+## 🎉 v0.1.3 - Team Metrics & Git Synchronization
+
+**Release Date:** February 13, 2026
+
+### 🎯 What's New
+
+#### **Team Performance Metrics**
+Track task and spec completion by team members based on Git commit history.
+
+**Features:**
+- **Team Member Cards**: Visual cards showing each contributor's statistics
+  - Tasks completed count
+  - Specs completed count  
+  - Average velocity (tasks per week)
+- **Git-Based Attribution**: Automatically attributes tasks to authors from Git commit history
+- **Unknown Tasks Indicator**: Shows tasks without Git commit data with explanatory note
+- **Real-Time Updates**: Metrics update automatically when tasks are completed
+
+#### **Automatic Git Data Import**
+New setting to automatically import Git history on first activation.
+
+**Configuration:**
+- **Setting**: `kiroSpecsDashboard.autoImportGitData` (default: `true`)
+- **Behavior**: Automatically imports velocity data from Git history when extension activates
+- **Smart Detection**: Only imports if no velocity data exists yet
+- **Progress Notification**: Shows import progress with success message
+
+**Access:** Configure in VSCode settings or disable for manual control
+
+#### **Import Data from Git Command**
+New command to manually import or refresh velocity data from Git history.
+
+**Usage:**
+- **Command**: `Specs Dashboard: Import Data from Git`
+- **Function**: Analyzes Git commit history and imports task completion data
+- **Use Cases**: 
+  - Manual refresh of velocity data
+  - Re-import after Git history changes
+  - Initial import if auto-import is disabled
+
+### 🐛 Bug Fixes
+
+#### **Task Count Accuracy**
+Fixed critical issue where team metrics showed more tasks than the dashboard.
+
+**Problem:** Tasks that moved to different line numbers across Git commits were counted multiple times (e.g., 209 tasks in metrics vs 189 in dashboard).
+
+**Solution:** Changed deduplication strategy from line-based to content-based identification:
+- Tasks are now identified by their content, not line number
+- Same task recognized correctly even when moved to different lines
+- Ensures metrics match dashboard counts exactly
+
+**Impact:** Team metrics now accurately reflect unique task completions
+
+### 🎨 UI Improvements
+
+- **Explanatory Notes**: Added subtle notes below metric sections explaining calculations
+  - Team Performance: "Shows task and spec completion by team members based on Git commit history"
+  - Projected Completion: Detailed formula explanation with 4-week average velocity
+  - Unknown Tasks: "Tasks without Git commit data" note for uncommitted work
+- **Button Spacing**: Added 8px gap between Metrics and Profiles buttons with rounded corners (4px)
+- **Consistent Styling**: All notes use 11px font with subtle color for visual hierarchy
+
+### 🔧 Technical Improvements
+
+- Enhanced logging for Git data import process with detailed breakdown by author
+- Improved deduplication algorithm using task content hashing
+- Better handling of uncommitted changes and files not yet in Git
+- Optimized velocity data migration performance
+
+---
+
 ## 🎉 v0.1.2 - Execution Profiles & Automated Spec Execution
 
 **Release Date:** February 6, 2026

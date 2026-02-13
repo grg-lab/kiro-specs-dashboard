@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { SpecsDashboardProvider } from './specsDashboardProvider';
 import { generateMockVelocityData } from './mockDataGenerator';
+import { migrateVelocityData } from './velocityMigration';
 import { ProfileManager } from './profileManager';
 import { ExecutionManager } from './executionManager';
 import { ExecutionHistory } from './executionHistory';
@@ -87,6 +88,96 @@ export function activate(context: vscode.ExtensionContext): void {
     provider
   );
 
+  // Auto-import Git data on first activation (if enabled)
+  const autoImportEnabled = vscode.workspace.getConfiguration('kiroSpecsDashboard').get<boolean>('autoImportGitData', true);
+  
+  if (autoImportEnabled) {
+    // Run auto-import immediately in the background
+    (async () => {
+      try {
+        provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import: Starting check...`);
+        
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) {
+          provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import skipped: No workspace folders`);
+          return;
+        }
+
+        provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import: Found ${workspaceFolders.length} workspace folder(s)`);
+
+        // Directly scan for specs using the scanner (bypasses webview visibility check)
+        const scanner = provider.getScanner();
+        const specs = await scanner.scanWorkspace();
+        
+        provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import: Found ${specs.length} spec(s)`);
+        
+        if (specs.length === 0) {
+          provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import skipped: No specs found`);
+          return;
+        }
+
+        // Check if velocity data already exists by checking if there are any weekly tasks
+        const velocityCalculator = provider.getVelocityCalculator();
+        await velocityCalculator.initialize();
+        const metrics = velocityCalculator.calculateMetrics(specs);
+        const hasExistingData = metrics.tasksPerWeek.some(count => count > 0);
+        
+        provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import: Existing data check - hasData: ${hasExistingData}, tasksPerWeek: [${metrics.tasksPerWeek.join(', ')}]`);
+        
+        if (hasExistingData) {
+          provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import skipped: Velocity data already exists`);
+          return;
+        }
+
+        provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import starting: Found ${specs.length} specs, no existing velocity data`);
+
+        vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: 'Importing velocity data from Git history...',
+          cancellable: false
+        }, async (progress) => {
+          try {
+            const stats = await migrateVelocityData(
+              workspaceFolders,
+              provider.getStateManager(),
+              provider.getVelocityCalculator(),
+              provider.getOutputChannel()
+            );
+            
+            // Reinitialize velocity calculator with migrated data
+            await provider.getAnalyticsPanelManager().reinitializeVelocityCalculator();
+            
+            provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import complete: ${stats.tasksProcessed} tasks from ${stats.authors.size} authors`);
+            
+            // Show success message
+            vscode.window.showInformationMessage(
+              `Git data imported! Processed ${stats.tasksProcessed} tasks from ${stats.authors.size} team members.`
+            );
+            
+            // Refresh both the dashboard and analytics panel
+            await provider.refresh();
+            provider.getAnalyticsPanelManager().notifyDataRefreshed(specs);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import error: ${errorMessage}`);
+            if (error instanceof Error && error.stack) {
+              provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Stack trace: ${error.stack}`);
+            }
+            // Don't show error to user for auto-import, just log it
+          }
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import initialization error: ${errorMessage}`);
+        if (error instanceof Error && error.stack) {
+          provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Stack trace: ${error.stack}`);
+        }
+      }
+    })();
+  } else {
+    provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Auto-import disabled in settings`);
+  }
+
   // Register commands
   const showDashboardCommand = vscode.commands.registerCommand(
     'specs-dashboard.show',
@@ -135,6 +226,55 @@ export function activate(context: vscode.ExtensionContext): void {
         await provider.refresh();
         // Force analytics panel to recalculate with empty velocity data
         provider.getAnalyticsPanelManager().notifyDataRefreshed(provider.getSpecs());
+      }
+    }
+  );
+
+  const migrateVelocityDataCommand = vscode.commands.registerCommand(
+    'specs-dashboard.migrateVelocityData',
+    async () => {
+      const answer = await vscode.window.showInformationMessage(
+        'This will scan your Git history to import existing task completions. This may take a few minutes. Continue?',
+        'Migrate Data',
+        'Cancel'
+      );
+      
+      if (answer === 'Migrate Data') {
+        vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: 'Migrating velocity data from Git history...',
+          cancellable: false
+        }, async (progress) => {
+          try {
+            const workspaceFolders = vscode.workspace.workspaceFolders;
+            if (!workspaceFolders) {
+              vscode.window.showErrorMessage('No workspace folder open');
+              return;
+            }
+            
+            const stats = await migrateVelocityData(
+              workspaceFolders,
+              provider.getStateManager(),
+              provider.getVelocityCalculator(),
+              provider.getOutputChannel()
+            );
+            
+            // Reinitialize velocity calculator with migrated data
+            await provider.getAnalyticsPanelManager().reinitializeVelocityCalculator();
+            
+            vscode.window.showInformationMessage(
+              `Migration complete! Processed ${stats.tasksProcessed} tasks from ${stats.authors.size} team members.`
+            );
+            
+            // Refresh both the dashboard and analytics panel
+            await provider.refresh();
+            provider.getAnalyticsPanelManager().notifyDataRefreshed(provider.getSpecs());
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            vscode.window.showErrorMessage(`Migration failed: ${errorMessage}`);
+            provider.getOutputChannel().appendLine(`[${new Date().toISOString()}] Migration error: ${errorMessage}`);
+          }
+        });
       }
     }
   );
@@ -236,6 +376,7 @@ export function activate(context: vscode.ExtensionContext): void {
     refreshCommand,
     generateMockDataCommand,
     clearVelocityDataCommand,
+    migrateVelocityDataCommand,
     openProfilesCommand,
     openAnalyticsCommand,
     watcher,
