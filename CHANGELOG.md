@@ -5,6 +5,49 @@ All notable changes to the "Kiro Specs Dashboard" extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-02-13
+
+### Added
+
+- **Team Performance Metrics**: Track task and spec completion by team members based on Git commit history
+  - Team member cards showing tasks completed, specs completed, and average velocity
+  - Git-based attribution automatically assigns tasks to authors from commit history
+  - "Unknown" tasks indicator for tasks without Git commit data with explanatory note
+  - Real-time updates when tasks are completed
+- **Automatic Git Data Import**: New setting `kiroSpecsDashboard.autoImportGitData` (default: true)
+  - Automatically imports velocity data from Git history on first activation
+  - Smart detection only imports if no velocity data exists yet
+  - Progress notification shows import status with success message
+- **New Command**: `Specs Dashboard: Import Data from Git`
+  - Manually import or refresh velocity data from Git history
+  - Analyzes Git commit history and imports task completion data
+  - Useful for manual refresh or re-import after Git history changes
+- **UI Improvements**:
+  - Added explanatory notes below metric sections (11px font, subtle styling)
+    - Team Performance: "Shows task and spec completion by team members based on Git commit history"
+    - Projected Completion: Detailed formula explanation with 4-week average velocity
+    - Unknown Tasks: "Tasks without Git commit data" note for uncommitted work
+  - Added 8px gap between Metrics and Profiles buttons with rounded corners (4px)
+
+### Fixed
+
+- **Critical: Task Count Accuracy** - Fixed issue where team metrics showed more tasks than dashboard
+  - Problem: Tasks that moved to different line numbers across Git commits were counted multiple times (e.g., 209 tasks in metrics vs 189 in dashboard)
+  - Solution: Changed deduplication strategy from line-based to content-based identification
+  - Tasks are now identified by their content, not line number
+  - Same task recognized correctly even when moved to different lines
+  - Team metrics now accurately match dashboard counts
+
+### Technical
+
+- Added `velocityMigration.ts` for Git history analysis and data import
+- Added `gitUtils.ts` for Git operations and author information
+- Enhanced logging for Git data import process with detailed breakdown by author
+- Improved deduplication algorithm using task content hashing (first 100 chars)
+- Better handling of uncommitted changes and files not yet in Git
+- Optimized velocity data migration performance
+- Added `TaskChange` interface with `taskText` field for stable task identification
+
 ## [0.1.2] - 2026-02-06
 
 ### Added
