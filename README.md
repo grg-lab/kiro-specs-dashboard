@@ -2,6 +2,35 @@
 
 A native Kiro IDE extension for visualizing and tracking Kiro spec features and tasks directly within your IDE.
 
+## Screenshots
+
+> **Note:** Screenshots will be added soon. See `media/screenshots/README.md` for guidelines on capturing screenshots.
+
+<details>
+<summary>📸 View Screenshots (Coming Soon)</summary>
+
+### Main Dashboard
+![Main Dashboard](./media/screenshots/dashboard-overview.png)
+*Spec cards with progress tracking, status badges, and quick access buttons*
+
+### Team Performance Metrics
+![Team Performance](./media/screenshots/team-metrics.png)
+*Track task and spec completion by team members with Git-based attribution*
+
+### Velocity Analytics
+![Velocity Charts](./media/screenshots/velocity-charts.png)
+*Weekly task and spec completion trends with consistency scoring*
+
+### Execution Profiles
+![Execution Profiles](./media/screenshots/execution-profiles.png)
+*Manage custom execution profiles with template variables*
+
+### Notes Panel
+![Notes Panel](./media/screenshots/notes-panel.png)
+*Rich text editor for spec notes with formatting and organization*
+
+</details>
+
 ## ⚠️ Important Disclaimer
 
 **This is an independent project and is NOT officially affiliated with, endorsed by, or part of the Kiro IDE project or Amazon Web Services (AWS).** This extension was created independently as a community contribution to provide additional tooling for developers using Kiro's spec-driven development workflow.
