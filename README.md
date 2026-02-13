@@ -39,6 +39,10 @@ This extension only reads and writes files in your workspace's `.kiro/specs/` di
 - **Notes Management**: Sort notes by recently updated, recently created, or oldest first with configurable pagination (10, 20, or show all)
 - **Notes Persistence**: Notes are saved per spec and persist across sessions with creation and update timestamps
 - **Metrics & Analytics**: Comprehensive velocity tracking and performance analytics with visual charts and insights
+  - **Team Performance Metrics**: Track task and spec completion by team members based on Git commit history
+  - **Automatic Git Data Import**: Automatically imports velocity data from Git history on first activation
+  - **Git-Based Attribution**: Tasks are automatically attributed to authors from commit history
+  - **Real-Time Updates**: Metrics update automatically as you complete tasks
 - **Execution Profiles**: Create and manage custom execution profiles for automated spec execution
   - Built-in profiles (MVP and Full) ready to use out of the box
   - Create custom profiles with personalized prompt templates
@@ -114,6 +118,12 @@ Click the **Metrics** button in the dashboard header to access comprehensive vel
 
 **Velocity Tab** provides:
 
+**Team Performance**:
+- Team member cards showing tasks completed, specs completed, and average velocity
+- Git-based attribution automatically assigns tasks to authors from commit history
+- "Unknown" tasks indicator for tasks without Git commit data
+- Real-time updates as tasks are completed
+
 **Specs Performance**:
 - Current week specs completed
 - Average specs per week
@@ -133,9 +143,9 @@ Click the **Metrics** button in the dashboard header to access comprehensive vel
   - Fast: ≤14 days
   - Medium: 15-42 days
   - Slow: ≥43 days
-- **Projected Completion**: Estimated completion date for remaining work with progress bar
+- **Projected Completion**: Estimated completion date for remaining work with progress bar and detailed formula explanation
 
-The Metrics panel automatically tracks your progress as you complete tasks and specs, providing insights into your development velocity and patterns.
+The Metrics panel automatically tracks your progress as you complete tasks and specs, providing insights into your development velocity, team performance, and patterns.
 
 ## Requirements
 
@@ -152,6 +162,11 @@ This extension provides the following commands:
 - **Specs Dashboard: Refresh Specs Dashboard** (`specs-dashboard.refresh`) - Manually refresh the dashboard data
 - **Specs Dashboard: Manage Profiles** (`specs-dashboard.openProfiles`) - Open the profile management panel to create and edit execution profiles
 - **Specs Dashboard: Show Metrics** (`specs-dashboard.openAnalytics`) - Open the Metrics panel to view velocity tracking and analytics
+- **Specs Dashboard: Import Data from Git** (`specs-dashboard.importGitData`) - Import or refresh velocity data from Git commit history
+  - Analyzes Git history to track task and spec completions
+  - Attributes tasks to team members based on commit authors
+  - Useful for manual refresh or re-import after Git history changes
+  - Automatically runs on first activation (configurable via settings)
 
 ### Development Commands
 
@@ -170,6 +185,10 @@ This extension provides the following commands:
 
 This extension contributes the following settings:
 
+- **kiroSpecsDashboard.autoImportGitData** (default: `true`) - Automatically import velocity data from Git history on first activation
+  - When enabled, the extension will analyze Git commit history and import task completion data automatically
+  - Only imports if no velocity data exists yet
+  - Can be disabled if you prefer to manually import data using the "Import Data from Git" command
 - Dashboard state (filter mode, search query, pagination) is automatically saved per workspace
 
 ## Known Issues
