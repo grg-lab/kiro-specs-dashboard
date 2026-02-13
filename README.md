@@ -4,8 +4,8 @@ A native Kiro IDE extension for visualizing and tracking Kiro spec features and 
 
 ## Screenshots
 
-<details>
-<summary>📸 View Screenshots</summary>
+<details open>
+<summary>📸 Click to view screenshots</summary>
 
 ### Main Dashboard
 ![Main Dashboard](./media/screenshots/dashboard-overview.png)
