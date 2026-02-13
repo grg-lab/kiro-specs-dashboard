@@ -25,6 +25,8 @@ A native Kiro IDE extension for visualizing and tracking Kiro spec features and 
 ![Velocity Charts](./media/screenshots/velocity-charts.png)
 *Weekly task and spec completion trends with consistency scoring*
 
+---
+
 ![Velocity Charts - Tasks View](./media/screenshots/velocity-charts-tasks.png)
 *Detailed task completion metrics and day-of-week analysis*
 
