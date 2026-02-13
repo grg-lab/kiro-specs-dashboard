@@ -13,9 +13,13 @@ A native Kiro IDE extension for visualizing and tracking Kiro spec features and 
 ![Main Dashboard](./media/screenshots/dashboard-overview.png)
 *Spec cards with progress tracking, status badges, and quick access buttons*
 
+---
+
 ### Team Performance Metrics
 ![Team Performance](./media/screenshots/team-metrics.png)
 *Track task and spec completion by team members with Git-based attribution*
+
+---
 
 ### Velocity Analytics
 ![Velocity Charts](./media/screenshots/velocity-charts.png)
@@ -24,9 +28,13 @@ A native Kiro IDE extension for visualizing and tracking Kiro spec features and 
 ![Velocity Charts - Tasks View](./media/screenshots/velocity-charts-tasks.png)
 *Detailed task completion metrics and day-of-week analysis*
 
+---
+
 ### Execution Profiles
 ![Execution Profiles](./media/screenshots/execution-profiles.png)
 *Manage custom execution profiles with template variables*
+
+---
 
 ### Notes Panel
 ![Notes Panel](./media/screenshots/notes-panel.png)
