@@ -5,6 +5,16 @@ All notable changes to the "Kiro Specs Dashboard" extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-02-14
+
+### Fixed
+
+- **Dashboard Filter State Restoration**: Fixed critical bug where filter state was not properly applied after window reload
+  - Problem: Filter button showed active state (e.g., "Done") but specs list displayed all items
+  - Root cause: `displaySpecs()` was bypassing filter logic by setting `filteredSpecs = specs` directly
+  - Solution: Removed direct assignment and changed to call `applyFilters()` to ensure restored filter state is applied
+  - Impact: Filter state now persists correctly across window reloads
+
 ## [0.1.3] - 2026-02-13
 
 ### Added

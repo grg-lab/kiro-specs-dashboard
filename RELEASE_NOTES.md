@@ -1,5 +1,24 @@
 # Release Notes
 
+## 🎉 v0.1.4 - Dashboard Filter Fix
+
+**Release Date:** February 14, 2026
+
+### 🐛 Bug Fixes
+
+#### **Dashboard Filter State Restoration**
+Fixed critical issue where filter state was not properly applied after window reload.
+
+**Problem:** After reloading the VSCode window, the filter button showed the active state (e.g., "Done") but the specs list displayed all items instead of the filtered results.
+
+**Root Cause:** The `displaySpecs()` function was setting `filteredSpecs = specs` directly and calling `displayPage(1)`, bypassing the filter logic entirely.
+
+**Solution:** Removed the direct assignment and changed to call `applyFilters()` at the end of `displaySpecs()`, ensuring that restored filter state is actually applied to the specs list.
+
+**Impact:** Filter state now persists correctly across window reloads, maintaining the user's selected filter view.
+
+---
+
 ## 🎉 v0.1.3 - Team Metrics & Git Synchronization
 
 **Release Date:** February 13, 2026
