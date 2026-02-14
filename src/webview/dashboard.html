@@ -2056,7 +2056,7 @@
                 const statsContainer = document.getElementById('statsContainer');
                 const specList = document.getElementById('specList');
 
-                filteredSpecs = specs;
+                // Don't set filteredSpecs here - let applyFilters() do it
                 currentState.currentPage = 1;
 
                 if (specs.length === 0) {
@@ -2117,8 +2117,8 @@
                 // Setup filters
                 setupFilters();
 
-                // Display first page
-                displayPage(1);
+                // Apply filters to respect restored state
+                applyFilters();
             } catch (error) {
                 console.error('Error in displaySpecs:', error);
                 showError('Failed to display specs: ' + (error.message || String(error)));
