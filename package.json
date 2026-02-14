@@ -27,6 +27,10 @@
   "keywords": [
     "kiro",
     "ai",
+    "kiro ai",
+    "kiro specs",
+    "kiro ide",
+    "kiro agent",
     "specs",
     "spec-driven-development",
     "spec driven",
@@ -47,7 +51,11 @@
     "agent",
     "productivity",
     "velocity",
-    "analytics"
+    "analytics",
+    "agile",
+    "scrum",
+    "kanban",
+    "sprint"
   ],
   "activationEvents": [
     "workspaceContains:**/.kiro/specs/**/tasks.md"
