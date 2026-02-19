@@ -1511,6 +1511,17 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
   }
 
   /**
+   * Format spec name from kebab-case to Title Case
+   * Converts "webview-panels-refactor" to "Webview Panels Refactor"
+   */
+  private formatSpecName(specName: string): string {
+    return specName
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  /**
    * Add a note to a spec
    */
   private async addNote(specName: string, text: string): Promise<void> {
@@ -1657,7 +1668,7 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
     // Create a new panel
     const panel = vscode.window.createWebviewPanel(
       'specNotes',
-      `Notes: ${specName}`,
+      `Notes: ${this.formatSpecName(specName)}`,
       vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -2253,7 +2264,7 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
     <body>
       <div class="notes-header">
         <div class="notes-header-left">
-          <div class="notes-title">Notes for ${specName}</div>
+          <div class="notes-title">Notes for ${this.formatSpecName(specName)}</div>
           <select class="notes-sort-select" id="sortSelect">
             <option value="recently-updated">Recently Updated</option>
             <option value="recently-created">Recently Created</option>

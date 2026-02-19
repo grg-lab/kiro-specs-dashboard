@@ -2476,6 +2476,19 @@
                     cancelExecution(executionId);
                 });
             });
+
+            // Attach spec item click listeners to open requirements.md
+            const specItems = document.querySelectorAll('.spec-item');
+            specItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    // Only trigger if clicking on the item itself, not on buttons
+                    // Buttons already have stopPropagation, so this won't trigger for them
+                    const specName = this.querySelector('[data-spec]')?.getAttribute('data-spec');
+                    if (specName) {
+                        openSpecFile(specName, 'requirements.md');
+                    }
+                });
+            });
         }
         
         // Show profile dropdown for execution
