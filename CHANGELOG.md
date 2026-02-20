@@ -5,6 +5,20 @@ All notable changes to the "Kiro Specs Dashboard" extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-02-20
+
+### Improved
+
+- **Notes Panel Header Formatting**: Notes panel header now displays formatted spec names in Title Case
+  - Changed from: "Notes for webview-panels-refactor"
+  - Changed to: "Notes for Webview Panels Refactor"
+  - Added `formatSpecName()` helper method to convert kebab-case to Title Case
+  - Consistent with spec name formatting throughout the dashboard
+- **Clickable Spec Items**: Spec cards are now clickable to quickly open requirements.md
+  - Clicking anywhere on a spec card opens the requirements.md file
+  - All existing buttons (Requirements, Design, Tasks, Notes, Execute) continue to work independently
+  - Improves workflow efficiency by providing quick access to spec requirements
+
 ## [0.1.4] - 2026-02-14
 
 ### Fixed

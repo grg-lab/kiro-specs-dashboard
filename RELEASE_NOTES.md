@@ -1,5 +1,36 @@
 # Release Notes
 
+## 🎉 v0.1.5 - UI Improvements
+
+**Release Date:** February 20, 2026
+
+### ✨ Improvements
+
+#### **Notes Panel Header Formatting**
+Notes panel headers now display formatted spec names in Title Case for better readability.
+
+**Changes:**
+- **Before**: "Notes for webview-panels-refactor"
+- **After**: "Notes for Webview Panels Refactor"
+- Added `formatSpecName()` helper method to convert kebab-case to Title Case
+- Consistent with spec name formatting throughout the dashboard
+
+#### **Clickable Spec Items**
+Spec cards are now clickable to quickly open requirements.md files.
+
+**Features:**
+- Click anywhere on a spec card to open requirements.md
+- All existing buttons continue to work independently:
+  - Requirements button → Opens requirements.md
+  - Design button → Opens design.md
+  - Tasks button → Opens tasks.md
+  - Notes button → Opens notes panel
+  - Execute button → Shows profile dropdown
+- Improves workflow efficiency by providing quick access to spec requirements
+- Visual feedback with cursor pointer and hover states
+
+---
+
 ## 🎉 v0.1.4 - Dashboard Filter Fix
 
 **Release Date:** February 14, 2026
