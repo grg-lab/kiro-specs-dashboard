@@ -28,6 +28,7 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
   private isWebviewVisible: boolean = false;
   private pendingRefresh: boolean = false;
   private notesPanels: Map<string, vscode.WebviewPanel> = new Map();
+  private taskPanels: Map<string, vscode.WebviewPanel> = new Map();
 
   constructor(private context: vscode.ExtensionContext) {
     this.scanner = new SpecScanner();
@@ -1386,9 +1387,8 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
         return;
       }
       
-      // Open tasks.md in editor mode for editing, other markdown files in preview mode for reading
       if (filePath.endsWith('tasks.md')) {
-        await vscode.window.showTextDocument(uri);
+        await this.openTasksPreview(filePath);
       } else if (filePath.endsWith('.md')) {
         await vscode.commands.executeCommand('markdown.showPreview', uri);
       } else {
@@ -1413,6 +1413,553 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
         this.outputChannel.show();
       }
     }
+  }
+
+  /**
+   * Open tasks.md in a dedicated webview panel with task-state styling.
+   */
+  private async openTasksPreview(filePath: string): Promise<void> {
+    const existingPanel = this.taskPanels.get(filePath);
+    const { formattedSpecName, tasksContent } = await this.getTasksPreviewData(filePath);
+
+    if (existingPanel) {
+      existingPanel.title = `Tasks: ${formattedSpecName}`;
+      existingPanel.webview.html = this.getTasksPreviewHtml(
+        existingPanel.webview,
+        formattedSpecName,
+        tasksContent,
+        filePath
+      );
+      existingPanel.reveal(vscode.ViewColumn.Active);
+      return;
+    }
+
+    const panel = vscode.window.createWebviewPanel(
+      'specTasksPreview',
+      `Tasks: ${formattedSpecName}`,
+      vscode.ViewColumn.Active,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        localResourceRoots: [this.context.extensionUri]
+      }
+    );
+
+    this.taskPanels.set(filePath, panel);
+
+    panel.onDidDispose(() => {
+      this.taskPanels.delete(filePath);
+    }, undefined, this.context.subscriptions);
+
+    panel.webview.onDidReceiveMessage(async (message) => {
+      if (!message || typeof message !== 'object' || typeof message.type !== 'string') {
+        return;
+      }
+
+      if (message.type === 'refreshTasksPreview') {
+        await this.refreshTasksPreview(filePath);
+      }
+    }, undefined, this.context.subscriptions);
+
+    panel.webview.html = this.getTasksPreviewHtml(panel.webview, formattedSpecName, tasksContent, filePath);
+  }
+
+  /**
+   * Reload an existing tasks preview panel from disk.
+   */
+  private async refreshTasksPreview(filePath: string): Promise<void> {
+    const panel = this.taskPanels.get(filePath);
+    if (!panel) {
+      await this.openTasksPreview(filePath);
+      return;
+    }
+
+    const { formattedSpecName, tasksContent } = await this.getTasksPreviewData(filePath);
+    panel.title = `Tasks: ${formattedSpecName}`;
+    panel.webview.html = this.getTasksPreviewHtml(
+      panel.webview,
+      formattedSpecName,
+      tasksContent,
+      filePath
+    );
+  }
+
+  /**
+   * Read tasks preview data from disk.
+   */
+  private async getTasksPreviewData(filePath: string): Promise<{
+    formattedSpecName: string;
+    tasksContent: string;
+  }> {
+    const path = require('path');
+    const specName = path.basename(path.dirname(filePath));
+    const formattedSpecName = this.formatSpecName(specName);
+    const tasksUri = vscode.Uri.file(filePath);
+    const bytes = await vscode.workspace.fs.readFile(tasksUri);
+    const tasksContent = Buffer.from(bytes).toString('utf8');
+
+    return {
+      formattedSpecName,
+      tasksContent
+    };
+  }
+
+  /**
+   * Generate HTML for the tasks preview panel.
+   */
+  private getTasksPreviewHtml(
+    webview: vscode.Webview,
+    specName: string,
+    tasksContent: string,
+    filePath: string
+  ): string {
+    const nonce = this.getNonce();
+    const refreshedAt = new Date().toLocaleString();
+    const markedUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'media', 'marked.min.js')
+    );
+    const highlightJsUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'media', 'highlight.min.js')
+    );
+    const highlightCssUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'media', 'highlight.css')
+    );
+
+    return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta http-equiv="Content-Security-Policy"
+            content="default-src 'none';
+                     style-src ${webview.cspSource} 'unsafe-inline';
+                     script-src 'nonce-${nonce}';
+                     font-src ${webview.cspSource};">
+      <link rel="stylesheet" href="${highlightCssUri}">
+      <title>Tasks: ${specName}</title>
+      <style nonce="${nonce}">
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          font-family: var(--vscode-font-family);
+          font-size: 13px;
+          color: var(--vscode-foreground);
+          background: var(--vscode-editor-background);
+        }
+
+        .tasks-header {
+          position: sticky;
+          top: 0;
+          z-index: 5;
+          padding: 14px 18px;
+          border-bottom: 1px solid var(--vscode-panel-border);
+          background: var(--vscode-sideBarSectionHeader-background);
+        }
+
+        .tasks-header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .tasks-title {
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--vscode-foreground);
+        }
+
+        .tasks-subtitle {
+          margin-top: 4px;
+          color: var(--vscode-descriptionForeground);
+          font-size: 12px;
+        }
+
+        .tasks-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .tasks-refresh-meta {
+          font-size: 11px;
+          color: var(--vscode-descriptionForeground);
+          white-space: nowrap;
+        }
+
+        .tasks-refresh-btn {
+          padding: 6px 12px;
+          border: 1px solid var(--vscode-button-border);
+          background: var(--vscode-button-secondaryBackground);
+          color: var(--vscode-button-secondaryForeground);
+          font-family: var(--vscode-font-family);
+          font-size: 12px;
+          cursor: pointer;
+        }
+
+        .tasks-refresh-btn:hover {
+          background: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        .tasks-content {
+          padding: 18px;
+        }
+
+        .task-row {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          margin: 8px 0;
+          padding: 10px 12px;
+          border: 1px solid var(--vscode-panel-border);
+          border-left-width: 4px;
+          background: var(--vscode-sideBar-background);
+          margin-left: calc(var(--task-level, 0) * 22px);
+        }
+
+        .task-marker {
+          min-width: 40px;
+          font-family: var(--vscode-editor-font-family);
+          color: var(--vscode-descriptionForeground);
+        }
+
+        .task-text {
+          line-height: 1.6;
+          color: var(--vscode-foreground);
+        }
+
+        .task-inline-label {
+          margin-left: 8px;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--vscode-descriptionForeground);
+          white-space: nowrap;
+        }
+
+        .task-row.task-done {
+          border-left-color: var(--vscode-testing-iconPassed, #73c991);
+          background: rgba(115, 201, 145, 0.08);
+        }
+
+        .task-row.task-done .task-text,
+        .task-row.task-done .task-text *,
+        .task-row.task-done .task-marker {
+          color: var(--vscode-testing-iconPassed, #73c991);
+          font-weight: 700;
+        }
+
+        .task-row.task-optional {
+          border-left-color: var(--vscode-terminal-ansiYellow, #d7ba7d);
+          background: rgba(215, 186, 125, 0.08);
+        }
+
+        .task-row.task-optional .task-text,
+        .task-row.task-optional .task-text *,
+        .task-row.task-optional .task-marker,
+        .task-row.task-optional .task-inline-label {
+          color: var(--vscode-terminal-ansiYellow, #d7ba7d);
+        }
+
+        .task-row.task-running {
+          border-left-color: var(--vscode-terminal-ansiBlue, #4fc1ff);
+          background: rgba(79, 193, 255, 0.08);
+        }
+
+        .task-row.task-running .task-text,
+        .task-row.task-running .task-text *,
+        .task-row.task-running .task-marker {
+          color: var(--vscode-terminal-ansiBlue, #4fc1ff);
+          font-weight: 600;
+        }
+
+        .task-row.task-queued {
+          border-left-color: var(--vscode-descriptionForeground);
+        }
+
+        .task-row.task-inherited {
+          padding-top: 8px;
+          padding-bottom: 8px;
+        }
+
+        .markdown-block {
+          margin: 0 0 14px 0;
+        }
+
+        .markdown-block h1,
+        .markdown-block h2,
+        .markdown-block h3,
+        .markdown-block h4,
+        .markdown-block h5,
+        .markdown-block h6 {
+          margin: 18px 0 10px 0;
+          font-weight: 700;
+          line-height: 1.3;
+        }
+
+        .markdown-block p {
+          margin: 8px 0;
+          line-height: 1.7;
+        }
+
+        .markdown-block ul,
+        .markdown-block ol {
+          margin: 8px 0;
+          padding-left: 24px;
+        }
+
+        .markdown-block code {
+          font-family: var(--vscode-editor-font-family);
+          font-size: 12px;
+          background: var(--vscode-textCodeBlock-background);
+          padding: 2px 4px;
+        }
+
+        .markdown-block pre {
+          overflow-x: auto;
+          padding: 12px;
+          background: var(--vscode-textCodeBlock-background);
+          border: 1px solid var(--vscode-panel-border);
+        }
+
+        .markdown-block pre code {
+          padding: 0;
+          background: transparent;
+        }
+
+        .markdown-block blockquote {
+          margin: 10px 0;
+          padding-left: 12px;
+          border-left: 3px solid var(--vscode-panel-border);
+          color: var(--vscode-descriptionForeground);
+        }
+      </style>
+    </head>
+    <body>
+      <div class="tasks-header">
+        <div class="tasks-header-bar">
+          <div class="tasks-title">Tasks: ${specName}</div>
+          <div class="tasks-header-actions">
+            <div class="tasks-refresh-meta">Updated: ${refreshedAt}</div>
+            <button class="tasks-refresh-btn" id="refreshTasksBtn">Refresh</button>
+          </div>
+        </div>
+        <div class="tasks-subtitle">Styled task states for done, optional, in execution, and inherited subtasks.</div>
+      </div>
+      <div class="tasks-content" id="tasksContent"></div>
+
+      <script nonce="${nonce}" src="${markedUri}"></script>
+      <script nonce="${nonce}" src="${highlightJsUri}"></script>
+      <script nonce="${nonce}">
+        const vscode = acquireVsCodeApi();
+        const rawTasksContent = ${JSON.stringify(tasksContent)};
+        const sourceFilePath = ${JSON.stringify(filePath)};
+
+        if (typeof marked !== 'undefined') {
+          marked.setOptions({
+            gfm: true,
+            breaks: true,
+            tables: true,
+            pedantic: false
+          });
+        }
+
+        function escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        function renderInlineMarkdown(text) {
+          if (typeof marked === 'undefined') {
+            return escapeHtml(text);
+          }
+
+          try {
+            return marked.parseInline(text);
+          } catch {
+            return escapeHtml(text);
+          }
+        }
+
+        function renderBlockMarkdown(text) {
+          if (typeof marked === 'undefined') {
+            return '<pre>' + escapeHtml(text) + '</pre>';
+          }
+
+          try {
+            return marked.parse(text);
+          } catch {
+            return '<pre>' + escapeHtml(text) + '</pre>';
+          }
+        }
+
+        function getIndentLevel(indentText) {
+          return Math.floor(indentText.replace(/\\t/g, '  ').length / 2);
+        }
+
+        function getTaskClasses(state, isOptional, inherited = false) {
+          const classes = ['task-row'];
+
+          if (inherited) {
+            classes.push('task-inherited');
+          }
+
+          if (state === 'x') {
+            classes.push('task-done');
+          } else if (state === '~') {
+            classes.push('task-running');
+          } else if (state === '-') {
+            classes.push('task-queued');
+          } else if (isOptional) {
+            classes.push('task-optional');
+          }
+
+          return classes.join(' ');
+        }
+
+        function getTaskSuffix(state, isOptional) {
+          const suffixes = [];
+
+          if (state === '~') {
+            suffixes.push('<span class="task-inline-label">(in execution)</span>');
+          } else if (isOptional) {
+            suffixes.push('<span class="task-inline-label">(optional)</span>');
+          }
+
+          return suffixes.join('');
+        }
+
+        function renderTaskStateLine(indent, state, isOptional, description, marker, inherited = false) {
+          const descriptionHtml = renderInlineMarkdown(description);
+          const suffixHtml = getTaskSuffix(state, isOptional);
+          const classes = getTaskClasses(state, isOptional, inherited);
+
+          return \`
+            <div class="\${classes}" style="--task-level: \${indent};">
+              <div class="task-marker">\${marker}</div>
+              <div class="task-text">\${descriptionHtml}\${suffixHtml}</div>
+            </div>
+          \`;
+        }
+
+        function renderTaskLine(match) {
+          const indent = getIndentLevel(match[1]);
+          const state = match[2];
+          const isOptional = match[3] === '*';
+          const description = match[4] || '';
+          const marker = '[' + state + ']';
+
+          return renderTaskStateLine(indent, state, isOptional, description, marker);
+        }
+
+        function renderInheritedBulletLine(indent, marker, description, taskContext) {
+          return renderTaskStateLine(
+            indent,
+            taskContext.state,
+            taskContext.isOptional,
+            description,
+            marker,
+            true
+          );
+        }
+
+        function flushMarkdownBuffer(parts, buffer) {
+          if (buffer.length === 0) {
+            return;
+          }
+
+          const block = buffer.join('\\n').trim();
+          if (block) {
+            parts.push('<div class="markdown-block">' + renderBlockMarkdown(block) + '</div>');
+          }
+
+          buffer.length = 0;
+        }
+
+        function renderTasksDocument(content) {
+          const lines = content.split('\\n');
+          const parts = [];
+          const markdownBuffer = [];
+          const taskPattern = /^(\\s*)-\\s*\\[([ x~-])\\](\\*)?\\s*(.*)$/;
+          const bulletPattern = /^(\\s*)([-+*])\\s+(.*)$/;
+          const numberedPattern = /^(\\s*)(\\d+\\.)\\s+(.*)$/;
+          const taskStack = [];
+
+          for (const line of lines) {
+            const taskMatch = line.match(taskPattern);
+            const bulletMatch = !taskMatch ? line.match(bulletPattern) : null;
+            const numberedMatch = !taskMatch && !bulletMatch ? line.match(numberedPattern) : null;
+
+            const indent = taskMatch
+              ? getIndentLevel(taskMatch[1])
+              : bulletMatch
+                ? getIndentLevel(bulletMatch[1])
+                : numberedMatch
+                  ? getIndentLevel(numberedMatch[1])
+                  : null;
+
+            if (indent !== null) {
+              while (taskStack.length > 0 && taskStack[taskStack.length - 1].indent >= indent) {
+                taskStack.pop();
+              }
+            }
+
+            if (taskMatch) {
+              flushMarkdownBuffer(parts, markdownBuffer);
+              parts.push(renderTaskLine(taskMatch));
+              taskStack.push({
+                indent,
+                state: taskMatch[2],
+                isOptional: taskMatch[3] === '*'
+              });
+            } else if ((bulletMatch || numberedMatch) && taskStack.length > 0) {
+              flushMarkdownBuffer(parts, markdownBuffer);
+              const inheritedMatch = bulletMatch || numberedMatch;
+              parts.push(
+                renderInheritedBulletLine(
+                  indent,
+                  inheritedMatch[2],
+                  inheritedMatch[3] || '',
+                  taskStack[taskStack.length - 1]
+                )
+              );
+            } else {
+              markdownBuffer.push(line);
+            }
+          }
+
+          flushMarkdownBuffer(parts, markdownBuffer);
+          return parts.join('');
+        }
+
+        const container = document.getElementById('tasksContent');
+        container.innerHTML = renderTasksDocument(rawTasksContent);
+
+        const refreshButton = document.getElementById('refreshTasksBtn');
+        if (refreshButton) {
+          refreshButton.addEventListener('click', () => {
+            refreshButton.disabled = true;
+            refreshButton.textContent = 'Refreshing...';
+            vscode.postMessage({
+              type: 'refreshTasksPreview',
+              filePath: sourceFilePath
+            });
+          });
+        }
+
+        if (typeof hljs !== 'undefined') {
+          container.querySelectorAll('pre code').forEach(block => {
+            try {
+              hljs.highlightElement(block);
+            } catch {}
+          });
+        }
+      </script>
+    </body>
+    </html>`;
   }
 
   /**
@@ -2896,6 +3443,12 @@ export class SpecsDashboardProvider implements vscode.WebviewViewProvider {
       panel.dispose();
     });
     this.notesPanels.clear();
+
+    // Dispose all task panels
+    this.taskPanels.forEach(panel => {
+      panel.dispose();
+    });
+    this.taskPanels.clear();
     
     // Dispose analytics panel manager
     if (this.analyticsPanelManager) {

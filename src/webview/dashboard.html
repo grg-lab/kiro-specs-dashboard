@@ -1978,6 +1978,9 @@
         let filteredSpecs = [];
         let executionProfiles = [];
         let executionStates = {};
+        let currentDetailSpecName = null;
+        let currentDetailTab = 'requirements';
+        let detailViewInitialized = false;
         
         // Request initial data
         vscode.postMessage({ type: 'requestSpecs' });
@@ -2117,6 +2120,15 @@
                 // Setup filters
                 setupFilters();
 
+                if (currentDetailSpecName) {
+                    const stillExists = allSpecs.some(spec => spec.name === currentDetailSpecName);
+                    if (stillExists) {
+                        showDetailView(currentDetailSpecName, currentDetailTab);
+                    } else {
+                        hideDetailView();
+                    }
+                }
+
                 // Apply filters to respect restored state
                 applyFilters();
             } catch (error) {
@@ -2184,6 +2196,8 @@
                     saveState();
                     displayPage(1);
                 });
+
+                attachDetailViewListeners();
                 
                 filtersInitialized = true;
             }
@@ -2582,36 +2596,163 @@
             });
         }
         
+        function getDetailNavigationSpecs() {
+            if (filteredSpecs.some(spec => spec.name === currentDetailSpecName)) {
+                return filteredSpecs;
+            }
+            return allSpecs;
+        }
+
+        function getDetailTabContainer(tabName) {
+            const tabId = `detail${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`;
+            return document.querySelector(`#${tabId} .markdown-content`);
+        }
+
+        function getDetailTabContent(spec, tabName) {
+            switch (tabName) {
+                case 'requirements':
+                    return spec.requirementsContent || '';
+                case 'design':
+                    return spec.designContent || '';
+                case 'tasks':
+                    return spec.tasksContent || '';
+                default:
+                    return '';
+            }
+        }
+
+        async function renderDetailTab(spec, tabName) {
+            const targetElement = getDetailTabContainer(tabName);
+            if (!targetElement) {
+                return;
+            }
+
+            const markdown = getDetailTabContent(spec, tabName);
+            if (!markdown || !markdown.trim()) {
+                const emptyLabels = {
+                    requirements: 'No requirements.md content available for this spec.',
+                    design: 'No design.md content available for this spec.',
+                    tasks: 'No tasks.md content available for this spec.'
+                };
+                targetElement.innerHTML = `<div class="detail-empty">${emptyLabels[tabName] || 'No content available.'}</div>`;
+                return;
+            }
+
+            await renderMarkdownComplete(markdown, targetElement);
+        }
+
+        async function switchDetailTab(tabName) {
+            if (!currentDetailSpecName) {
+                return;
+            }
+
+            const spec = allSpecs.find(s => s.name === currentDetailSpecName);
+            if (!spec) {
+                hideDetailView();
+                return;
+            }
+
+            currentDetailTab = tabName;
+
+            const tabs = document.querySelectorAll('.detail-tab');
+            const contents = document.querySelectorAll('.detail-tab-content');
+
+            tabs.forEach(tab => {
+                tab.classList.toggle('active', tab.getAttribute('data-tab') === tabName);
+            });
+
+            contents.forEach(content => {
+                content.classList.toggle(
+                    'active',
+                    content.id === `detail${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`
+                );
+            });
+
+            await renderDetailTab(spec, tabName);
+        }
+
+        function updateDetailNavigation() {
+            const prevBtn = document.getElementById('detailPrevBtn');
+            const nextBtn = document.getElementById('detailNextBtn');
+            const navSpecs = getDetailNavigationSpecs();
+            const currentIndex = navSpecs.findIndex(spec => spec.name === currentDetailSpecName);
+
+            if (prevBtn) {
+                prevBtn.disabled = currentIndex <= 0;
+            }
+
+            if (nextBtn) {
+                nextBtn.disabled = currentIndex === -1 || currentIndex >= navSpecs.length - 1;
+            }
+        }
+
+        function hideDetailView() {
+            const detailView = document.getElementById('detailView');
+            if (detailView) {
+                detailView.style.display = 'none';
+            }
+
+            currentDetailSpecName = null;
+        }
+
+        function navigateDetail(offset) {
+            const navSpecs = getDetailNavigationSpecs();
+            const currentIndex = navSpecs.findIndex(spec => spec.name === currentDetailSpecName);
+            const nextSpec = navSpecs[currentIndex + offset];
+
+            if (nextSpec) {
+                showDetailView(nextSpec.name, currentDetailTab);
+            }
+        }
+
+        function attachDetailViewListeners() {
+            if (detailViewInitialized) {
+                return;
+            }
+
+            document.querySelectorAll('.detail-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    if (tabName) {
+                        switchDetailTab(tabName);
+                    }
+                });
+            });
+
+            const closeBtn = document.getElementById('detailCloseBtn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', hideDetailView);
+            }
+
+            const prevBtn = document.getElementById('detailPrevBtn');
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => navigateDetail(-1));
+            }
+
+            const nextBtn = document.getElementById('detailNextBtn');
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => navigateDetail(1));
+            }
+
+            detailViewInitialized = true;
+        }
+
         // Show detail view with specific tab
-        function showDetailView(specName, tabName = 'requirements') {
+        async function showDetailView(specName, tabName = 'requirements') {
             const spec = allSpecs.find(s => s.name === specName);
             if (!spec) return;
             
             const detailView = document.getElementById('detailView');
             const detailTitle = document.getElementById('detailTitle');
-            
+
+            currentDetailSpecName = specName;
             detailTitle.textContent = formatDisplayName(specName);
             detailView.style.display = 'block';
-            
-            // Switch to the specified tab
-            const tabs = document.querySelectorAll('.detail-tab');
-            const contents = document.querySelectorAll('.detail-tab-content');
-            
-            tabs.forEach(tab => {
-                if (tab.getAttribute('data-tab') === tabName) {
-                    tab.classList.add('active');
-                } else {
-                    tab.classList.remove('active');
-                }
-            });
-            
-            contents.forEach(content => {
-                if (content.id === `detail${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`) {
-                    content.classList.add('active');
-                } else {
-                    content.classList.remove('active');
-                }
-            });
+
+            await switchDetailTab(tabName);
+            updateDetailNavigation();
+
+            detailView.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         
         // Format display name from kebab-case

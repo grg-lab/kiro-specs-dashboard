@@ -119,10 +119,10 @@ The spec cards have been redesigned with improved information hierarchy:
 
 ### Opening Spec Files
 
-Click the file access buttons to open the corresponding files:
-- **Requirements** - Opens requirements.md in preview mode
-- **Design** - Opens design.md in preview mode
-- **Tasks** - Opens tasks.md in editor mode for direct editing
+Click the file access buttons to open the corresponding files in a new editor tab:
+- **Requirements** - Opens requirements.md with Markdown preview styling
+- **Design** - Opens design.md with Markdown preview styling
+- **Tasks** - Opens a styled Tasks view with custom states for done, optional, and in execution
 - **Notes** - Opens the notes panel for this spec
 
 ### Managing Notes
